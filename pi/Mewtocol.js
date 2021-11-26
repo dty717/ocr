@@ -148,7 +148,7 @@
         function ReadDataArea(type, datasLength, _startAddr){
             var returnBytes=[];
             var _endAddr=(parseInt(_startAddr)+datasLength-1).toString().toUpperCase();
-            console.log(_endAddr)
+            // console.log(_endAddr)
             returnBytes[0]=0x25;
             returnBytes[1]=addr1;
             returnBytes[2]=addr2;
@@ -220,7 +220,7 @@
                 return_value[k++]=BytesToHex(_data,i,4);
                 i+=3;
             }
-            console.log(return_value);
+            // console.log(return_value);
         }
     //RCS
         function ReadContactSingle(type, _startAddr){
@@ -316,7 +316,7 @@
             var Link_information_for_system=BytesToHex(_data,14,2);
             var Error_flag=BytesToHex(_data,16,2);
             var Self_diagnostic_error=BytesToHex(_data,18,4);
-            console.log(Model_code,Version,Program_capacity,Operation_mode);
+            // console.log(Model_code,Version,Program_capacity,Operation_mode);
         }
         //WS
         function  WriteTimerOrCounter(datas,_startAddr){
@@ -497,7 +497,7 @@
         }
         function  BytesToHex(data,start,len){
             if(len==2){
-                console.log(data[start],data[start+1]);
+                // console.log(data[start],data[start+1]);
                 return (data[start]<<4)+data[start+1];
             }else if(len==4){
                 return (data[start+0]<<4)+data[start+1]+(data[start+2]<<12)+(data[start+3]<<8);
@@ -590,7 +590,7 @@
             // Read the bits as a float/native 64-bit double
             var num = view.getFloat32(0);
             // Done
-            console.log(num);
+            // console.log(num);
         }
         
         function GetDataTypeByte(type){
@@ -732,4 +732,5 @@
                 return  [ return_value[0] , return_value[1] ];
             }
         }
-        
+
+module.exports = { WriteData}

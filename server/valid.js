@@ -177,14 +177,14 @@ fs.readFile('./json/11-11-05.json', 'utf8', (err, data) => {
                 for (let i = 0; i < 4; i++) {
                     const dataTypeBlock = blocks[heightPossibleList[i].index];
                     var dataTypeBlockText = dataTypeBlock.text.replace(/[` ]/g,"");
-                    if(dataTypeValid(dataTypeBlockText)){
+                    if (dataTypeValid(dataTypeBlockText)) {
                         notIncludeIndexList.push(heightPossibleList[i].index);
                         var selectDataLabeBlockVertices = dataTypeBlock.boundingBox.vertices;
                         var textWidth1 = (selectDataLabeBlockVertices[1].x + selectDataLabeBlockVertices[0].x) / 2;
                         var textWidth2 = (selectDataLabeBlockVertices[2].x + selectDataLabeBlockVertices[3].x) / 2;
                         var textHeight1 = (selectDataLabeBlockVertices[1].y + selectDataLabeBlockVertices[0].y) / 2;
                         var textHeight2 = (selectDataLabeBlockVertices[2].y + selectDataLabeBlockVertices[3].y) / 2;
-                        var dataPossibleList = getPossibleList(blocks,  (index) => { return !notIncludeIndexList.includes(index) }, (blockVertices) => {
+                        var dataPossibleList = getPossibleList(blocks, (index) => { return !notIncludeIndexList.includes(index) }, (blockVertices) => {
                             var height1 = (blockVertices[1].y + blockVertices[0].y) / 2;
                             var height2 = (blockVertices[2].y + blockVertices[3].y) / 2;
                             var width1 = (blockVertices[1].x + blockVertices[0].x) / 2;
@@ -195,41 +195,55 @@ fs.readFile('./json/11-11-05.json', 'utf8', (err, data) => {
                         for (let j = 0; j < 4; j++) {
                             const dataBlock = blocks[dataPossibleList[i].index];
                             var dataBlockText = dataBlock.text.replace(/[` ]/g, "");
-                            if(dataValid(dataBlockText)){
+                            if (dataValid(dataBlockText)) {
+                                const dataObject = getData(dataBlockText)
                                 notIncludeIndexList.push(dataPossibleList[i].index);
                                 const yearRegex = /年|year|Year|YEAR/;
                                 const yearValueRegex = /\d+\s*[年|year|Year|YEAR]/;
-                                var year = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,yearRegex,yearValueRegex);
-                                
+                                var year = getTimeByNameWithRegex(blocks, notIncludeIndexList, yearRegex, yearValueRegex);
+
                                 const monthRegex = /月|month|Month|MONTH/;
                                 const monthValueRegex = /\d+\s*[月|month|Month|MONTH]/;
-                                var month = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,monthRegex,monthValueRegex);
+                                var month = getTimeByNameWithRegex(blocks, notIncludeIndexList, monthRegex, monthValueRegex);
 
                                 const dateRegex = /日|date|Date|DATE/;
                                 const dateValueRegex = /\d+\s*[日|date|Date|DATE]/;
-                                var date = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,dateRegex,dateValueRegex);
+                                var date = getTimeByNameWithRegex(blocks, notIncludeIndexList, dateRegex, dateValueRegex);
 
                                 const hourRegex = /时|吋|hour|Hour|HOUR/;
                                 const hourValueRegex = /\d+\s*[时|吋|hour|Hour|HOUR]/;
-                                var hour = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,hourRegex,hourValueRegex);
+                                var hour = getTimeByNameWithRegex(blocks, notIncludeIndexList, hourRegex, hourValueRegex);
 
                                 const minuteRegex = /分|min|Min|MIN/;
                                 const minuteValueRegex = /\d+\s*[分|min|Min|MIN]/;
-                                var minute = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,minuteRegex,minuteValueRegex);
+                                var minute = getTimeByNameWithRegex(blocks, notIncludeIndexList, minuteRegex, minuteValueRegex);
 
                                 const secondRegex = /秒|sec|Sec|SEC/;
                                 const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
-
-                                var second = getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,secondRegex,secondValueRegex);
-                                console.log(year,month,date,hour,minute,second);
-                                
-                                break;
+                                var second = getTimeByNameWithRegex(blocks, notIncludeIndexList, secondRegex, secondValueRegex);
+                                var time = new Date(0);
+                                if (year != undefined) {
+                                    time.setFullYear(year);
+                                    if (month != undefined) {
+                                        time.setMonth(month - 1);
+                                        if (date != undefined) {
+                                            time.setDate(date);
+                                            if (hour != undefined) {
+                                                time.setHours(hour);
+                                                if (minute != undefined) {
+                                                    time.setMinutes(minute);
+                                                    if (second != undefined) {
+                                                        time.setSeconds(second);
+                                                    }    
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                console.log({year,month,date,hour,minute,second});
+                                return { time, value: dataObject.data, unit: dataObject.unit, type: dataType }
                             }
                         }
-                        // for (let index = 0; index < array.length; index++) {
-                        //     const element = array[index];
-                            
-                        // }
                         break;
                     }
                 }
