@@ -12,7 +12,7 @@ require('./SmartDetectHistory');
 const buffer = new ArrayBuffer(4);
 const f32 = new Float32Array(buffer); // [0]
 const ui8 = new Uint8Array(buffer); // [0, 0, 0, 0]
-const { logger } = require("./Logger")
+const { logger,_time_ } = require("./Logger")
 
 //var PLC_Config={host:"server.delinapi.top:3000" , port: 9001 }
 // var PLC_Config={host:"192.168.0.101" , port: 60002 }

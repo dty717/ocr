@@ -117,6 +117,42 @@ sudo systemctl start ocr.service
 
 https://roboticsbackend.com/make-a-raspberry-pi-3-program-start-on-boot/
 
+## set static ip
+
+```sh
+sudo nano /etc/netplan/50-cloud-init.yaml
+```
+
+```
+
+# This file is generated from information provided by the datasource.
+# Changes to it will not persist across an instance reboot.  To disable
+# cloud-init's network configuration capabilities, write a file
+# /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the
+# following: network: {config: disabled}
+network:
+    version: 2
+    renderer: networkd
+    wifis:
+        wlan0:
+            access-points:
+                DESKTOP-18:
+                    password: '12345678'
+            dhcp4: true
+            optional: true
+    ethernets:
+        eth0:
+            addresses:
+                - 192.168.0.2/24
+```
+
+```sh
+sudo netplan generate
+sudo netplan try
+sudo netplan apply
+```
+
+
 # link
 
 https://ubuntu.com/download/raspberry-pi

@@ -29,4 +29,4 @@ process.on('uncaughtException',function(err) {
   }, 2000)
 });
 
-module.exports = {logger}
+module.exports = {logger,_time_}
