@@ -7783,7 +7783,7 @@ function draw() {
     stroke(random(100, 145), random(80, 100), random(80, 100));
 
     vertices =
-        obj.responses[0].fullTextAnnotation.pages[0].blocks[5].boundingBox.vertices
+        obj.fullTextAnnotation.pages[0].blocks[5].boundingBox.vertices
 
     line(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y)
     line(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y)

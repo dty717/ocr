@@ -78,6 +78,10 @@ https://www.mongodb.com/developer/how-to/mongodb-on-raspberry-pi/
 
 ## install ffmpeg
 
+install gcc library
+```sh
+apt-get install build-essential
+```
 I downloaded and compiled ffmpeg from the source. Download ffmpeg_4.4.orig.tar.xz
 https://launchpad.net/ubuntu/+source/ffmpeg
 Unpack it.
@@ -90,6 +94,26 @@ sudo make install
 ```
 
 ## create service
+
+```sh
+mkdir github
+git clone https://github.com/dty717/ocr.git
+```
+
+```sh
+cd ocr/
+touch capture.js
+chmod +x capture.js
+cd /lib/systemd/system
+sudo touch  ocr.service
+sudo nano ocr.service
+```
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable ocr.service
+sudo systemctl start ocr.service
+```
 
 https://roboticsbackend.com/make-a-raspberry-pi-3-program-start-on-boot/
 
@@ -112,3 +136,7 @@ https://github.com/nodesource/distributions/edit/master/README.md
 https://stackoverflow.com/a/61444221/7734634
 
 https://askubuntu.com/a/1343976
+
+https://unix.stackexchange.com/a/47092/412884
+
+https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
