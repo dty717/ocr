@@ -176,3 +176,5 @@ https://askubuntu.com/a/1343976
 https://unix.stackexchange.com/a/47092/412884
 
 https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
+
+https://netplan.io/examples/

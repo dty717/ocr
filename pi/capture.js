@@ -21,15 +21,15 @@ var ffmpegConfig = ["-f", "v4l2", "-framerate", "30", "-video_size", "1024x576",
 var uploadURL = "http://server.delinapi.top:3000/ocr";
 var uploadTime = 10*1000;
 
-const mongoUri = 'mongodb://127.0.0.1:27017/<dbname>?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false'
+const mongoUri = 'mongodb://127.0.0.1:27017/ocrDB?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false'
+
 if (!mongoUri) {
   throw new Error(
     `MongoURI was not supplied.  Make sure you watch the video on setting up Mongo DB!`
   );
 }
 mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useCreateIndex: true
+  useNewUrlParser: true
 });
 mongoose.connection.on('connected', () => {
   console.log('Connected to mongo instance');
