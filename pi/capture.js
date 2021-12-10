@@ -23,7 +23,7 @@ var uploadURL = "http://server.delinapi.top:3000/ocr";
 var uploadTime = 10 * 60 * 1000;
 
 const mongoUri = 'mongodb://127.0.0.1:27017/ocrDB?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false'
-var selectValue;
+var selectedValue;
 
 if (!mongoUri) {
   throw new Error(
@@ -69,8 +69,8 @@ function capatureAndUpload() {
     form.append('company', 'delin');
     form.append('deviceID', 'SmartDetect_SD_DL1119100000001');
     form.append('uploadImage', fs.createReadStream('uploadImage/current_frame.jpg'));
-    if (selectValue != undefined) {
-      form.append('selectValue', selectValue);
+    if (selectedValue != undefined) {
+      form.append('selectedValue', selectedValue);
     }
     axios.post(uploadURL, form, { headers: form.getHeaders() }).then(async ({ data }) => {
       logger.log(_time_(new Date()), data);
@@ -160,13 +160,13 @@ function getData() {
       var a2 = parseInt("0x"+strTem.substring(4,6))
       var a3 = parseInt("0x"+strTem.substring(6,8))
       try {
-        selectValue = Buffer.from([a3,a2,a1,a0]).readFloatBE(0);
-        logger.log(_time_(new Date()), { selectValue });
+        selectedValue = Buffer.from([a3,a2,a1,a0]).readFloatBE(0);
+        logger.log(_time_(new Date()), { selectedValue });
       } catch (error) {
         logger.log(_time_(new Date()), error);
       }
     }else{
-      selectValue = undefined;
+      selectedValue = undefined;
     }
     
     logger.log(_time_(new Date()), "server => device:", str);
