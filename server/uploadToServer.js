@@ -23,10 +23,6 @@ async function setEndpoint(path) {
 
 setEndpoint("./image/"+fileName);
 
-
-
-
-
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');

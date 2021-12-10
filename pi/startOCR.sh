@@ -1,0 +1,1 @@
+(cd /home/ubuntu/github/ocr/pi/&&node capture.js)

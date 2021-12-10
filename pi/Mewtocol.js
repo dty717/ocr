@@ -733,4 +733,4 @@
             }
         }
 
-module.exports = { WriteData}
+module.exports = { WriteData, ReadDataArea }

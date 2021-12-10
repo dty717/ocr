@@ -149,9 +149,55 @@ network:
 ```sh
 sudo netplan generate
 sudo netplan try
-sudo netplan apply
+# sudo netplan apply
+```
+## install tesseract
+
+```sh
+sudo apt-get install g++ # or clang++ (presumably)
+sudo apt-get install autoconf automake libtool
+sudo apt-get install pkg-config
+sudo apt-get install libpng-dev
+sudo apt-get install libjpeg8-dev
+sudo apt-get install libtiff5-dev
+sudo apt-get install zlib1g-dev
+sudo apt-get install libicu-dev
+sudo apt-get install libpango1.0-dev
+sudo apt-get install libcairo2-dev
+sudo apt-get install libleptonica-dev
+cd ~/github
+git clone https://github.com/tesseract-ocr/tesseract.git
+cd tesseract
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+make training
+sudo make training-install
 ```
 
+add TESSDATA_PREFIX
+```sh
+cd /home/ubuntu/github/
+mkdir tessdata
+wget https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata
+wget https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_sim_vert.traineddata
+wget https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_sim.traineddata
+sudo nano ~/.bashrc
+```
+add in the bottom
+```sh
+export TESSDATA_PREFIX=/home/ubuntu/github/tessdata
+```
+```sh
+source ~/.bash
+```
+test
+```sh
+cd ~/github/ocr/pi
+tesseract uploadImage/current_frame.jpg testCurrent -l eng+chi_sim
+```
 
 # link
 
@@ -175,6 +221,8 @@ https://askubuntu.com/a/1343976
 
 https://unix.stackexchange.com/a/47092/412884
 
-https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
-
 https://netplan.io/examples/
+
+https://tesseract-ocr.github.io/tessdoc/Compiling.html
+
+https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
