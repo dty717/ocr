@@ -226,3 +226,8 @@ https://netplan.io/examples/
 https://tesseract-ocr.github.io/tessdoc/Compiling.html
 
 https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
+
+https://youtu.be/GQJI4WiMuDk
+
+https://youtu.be/rgWVm_j3llo
+

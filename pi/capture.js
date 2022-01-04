@@ -93,6 +93,7 @@ setTimeout(() => {
 }, 2000)
 
 setInterval(() => {
+  getData("D", 2, "70");
   capatureAndUpload();
 }, uploadTime);
 
