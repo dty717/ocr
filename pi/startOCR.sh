@@ -1,1 +1,1 @@
-(cd /home/ubuntu/github/ocr/pi/&&node capture.js)
+(cd /home/ubuntu/github/ocr/pi/&&node index.js)
