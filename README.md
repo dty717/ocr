@@ -31,8 +31,8 @@ edit network-config
 
 ## enable ssh
 
-first loggin in with keyboard and monitor, with username ubuntu and password ubuntu
-it will change the password first time
+First logging in with keyboard and monitor, with username ubuntu and password ubuntu
+it will change the password first time.
 set the ssh key by
 ```sh
 sudo rm /etc/ssh/ssh_host*
@@ -43,7 +43,19 @@ then reload ssh service
 sudo systemctl enable ssh.service
 sudo systemctl start ssh.service
 ```
-then you can connect raspberry pi with ssh
+then you can connect raspberry pi with ssh.
+
+## create ssh key
+Create ssh by ssh-keygen. 
+```sh
+cd ~/.ssh
+ssh-keygen -t rsa
+```
+Copy the ssh id to default host with default user.
+```sh
+cd ~/.ssh
+ssh-copy-id -i ~/.ssh/id_rsa.pub default_user@default_host
+```
 
 ## set hostname
 Change hosts file                      

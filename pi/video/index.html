@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Webcam Streaming</title>
+
+    <!-- Website from Eero Kaan -->
+    <!-- kaanlabs.com -->
+    <!-- edit by dty717 in 2011.11 -->
+
+    <link href="http://vjs.zencdn.net/6.6.3/video-js.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background-color: #000000;
+        }
+
+        .StreamWrapper {
+            width: 100%;
+            margin-top: 2.5%;
+        }
+
+        .StreamScreen {
+            width: 45%;
+        }
+
+        .StreamScreen>div {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="StreamWrapper">
+        <div class="StreamScreen" style="float:left;margin-left:2.5%;">
+            <video id=stream1 width=720 height=480 class="video-js vjs-default-skin" controls>
+                <source type="application/x-mpegURL" src="/video/HLSStream/webcam0.m3u8">
+            </video>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="http://vjs.zencdn.net/6.6.3/video.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.14.1/videojs-contrib-hls.min.js"></script>
+
+    <script>
+        var video;
+        if (new URL(window.location.href).searchParams != undefined) {
+            video = new URL(window.location.href).searchParams.get("v");
+        } else {
+            video = new URL(window.location.href).search.replace("?v=", "")
+        }
+        if (video == undefined || (video == "")) {
+            video = "webcam0";
+        }
+        var streamplayer1 = videojs('stream1');
+        streamplayer1.src({
+            type: 'application/x-mpegURL',
+            src: '/video/HLSStream/' + video + '.m3u8'
+        });
+        streamplayer1.play();
+    </script>
+</body>
+</html>

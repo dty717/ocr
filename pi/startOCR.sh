@@ -1,1 +1,1 @@
-(cd /home/ubuntu/github/ocr/pi/&&node index.js)
+(cd /home/ubuntu/github/ocr/pi/&&sudo node index.js)

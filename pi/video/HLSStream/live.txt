@@ -1,0 +1,1 @@
+ffmpeg -v verbose -i /dev/video0 -vf scale=1920:1080 -r 25 -b:v 1000000 -acodec aac -sc_threshold 0 -f hls -hls_time 5 -segment_time 5 -hls_list_size 5 webcam0.m3u8
