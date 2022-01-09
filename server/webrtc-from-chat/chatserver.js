@@ -1,46 +1,47 @@
-const express = require('express')
+//#!/usr/bin/env node
+//
+// WebSocket chat server
+// Implemented using Node.js
+//
+// Requires the websocket module.
+//
+// WebSocket and WebRTC based multi-user chat sample with two-way video
+// calling, including use of TURN if applicable or necessary.
+//
+// This file contains the JavaScript code that implements the server-side
+// functionality of the chat system, including user ID management, message
+// reflection, and routing of private messages, including support for
+// sending through unknown JSON objects to support custom apps and signaling
+// for WebRTC.
+//
+// Requires Node.js and the websocket module (WebSocket-Node):
+//
+//  - http://nodejs.org/
+//  - https://github.com/theturtle32/WebSocket-Node
+//
+// To read about how this sample works:  http://bit.ly/webrtc-from-chat
+//
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
+"use strict";
+
+var http = require('http');
 var https = require('https');
 var fs = require('fs');
-var http = require('http');
 var WebSocketServer = require('websocket').server;
-
-const app = express()
 
 // Pathnames of the SSL key and certificate files to use for
 // HTTPS connections.
 
-const certFilePath = "/etc/letsencrypt/live/server.delinapi.top/fullchain.pem";
-const keyFilePath = "/etc/letsencrypt/live/server.delinapi.top/privkey.pem";
-
-// Try to load the key and certificate files for SSL so we can
-// do HTTPS (required for non-local WebRTC).
-
-var httpsOptions = {
-  key: null,
-  cert: null
-};
-
-try {
-  httpsOptions.key = fs.readFileSync(keyFilePath);
-  try {
-    httpsOptions.cert = fs.readFileSync(certFilePath);
-  } catch (err) {
-    httpsOptions.key = null;
-    httpsOptions.cert = null;
-  }
-} catch (err) {
-  httpsOptions.key = null;
-  httpsOptions.cert = null;
-}
-
-
+const keyFilePath = "/etc/letsencrypt/live/server.delinapi.top/fullchain.pem";
+const certFilePath = "/etc/letsencrypt/live/server.delinapi.top/privkey.pem";
 
 // Used for managing the text chat user list.
 
 var connectionArray = [];
 var nextID = Date.now();
 var appendToMakeUnique = 1;
-
 
 // Output logging information to console
 
@@ -138,19 +139,31 @@ function sendUserListToAll() {
   }
 }
 
-// Our HTTPS server does nothing but service WebSocket
-// connections, so every request just returns 404. Real Web
-// requests are handled by the main server on the box. If you
-// want to, you can return real HTML here and serve Web content.
 
-function handleWebRequest(request, response) {
-  log ("Received request for " + request.url);
-  response.writeHead(404);
-  response.end();
+// Try to load the key and certificate files for SSL so we can
+// do HTTPS (required for non-local WebRTC).
+
+var httpsOptions = {
+  key: null,
+  cert: null
+};
+
+try {
+  httpsOptions.key = fs.readFileSync(keyFilePath);
+  try {
+    httpsOptions.cert = fs.readFileSync(certFilePath);
+  } catch(err) {
+    httpsOptions.key = null;
+    httpsOptions.cert = null;
+  }
+} catch(err) {
+  httpsOptions.key = null;
+  httpsOptions.cert = null;
 }
 
 // If we were able to get the key and certificate files, try to
 // start up an HTTPS server.
+
 var webServer = null;
 
 try {
@@ -171,13 +184,23 @@ if (!webServer) {
 }
 
 
+// Our HTTPS server does nothing but service WebSocket
+// connections, so every request just returns 404. Real Web
+// requests are handled by the main server on the box. If you
+// want to, you can return real HTML here and serve Web content.
+
+function handleWebRequest(request, response) {
+  log ("Received request for " + request.url);
+  response.writeHead(404);
+  response.end();
+}
+
 // Spin up the HTTPS server on the port assigned to this sample.
 // This will be turned into a WebSocket port very shortly.
 
 webServer.listen(6503, function() {
   log("Server is listening on port 6503");
 });
-
 
 // Create the WebSocket server by converting the HTTPS server into one.
 
@@ -331,10 +354,3 @@ wsServer.on('request', function(request) {
     log(logMessage);
   });
 });
-
-
-app.use(express.static('webrtc-from-chat'));
-
-
-http.createServer(app).listen(80)
-https.createServer(httpsOptions, app).listen(443)

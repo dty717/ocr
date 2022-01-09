@@ -46,15 +46,21 @@ sudo systemctl start ssh.service
 then you can connect raspberry pi with ssh.
 
 ## create ssh key
-Create ssh by ssh-keygen. 
+Create ssh by ssh-keygen and add it. 
 ```sh
 cd ~/.ssh
+eval "$(ssh-agent -s)"
 ssh-keygen -t rsa
+ssh-add ~/.ssh/id_rsa
 ```
 Copy the ssh id to default host with default user.
 ```sh
 cd ~/.ssh
 ssh-copy-id -i ~/.ssh/id_rsa.pub default_user@default_host
+```
+Create a ~/.ssh/config file and insert the line:
+```sh
+UserKnownHostsFile ~/.ssh/known_hosts
 ```
 
 ## set hostname
@@ -76,11 +82,12 @@ sudo systemctl restart systemd-resolved.service
 
 ## install nodejs
 
-Install node.js v17.x:
+Install node.js and npm:
 
 ```sh
-curl -fsSL https://deb.nodesource.com/setup_17.x | sudo -E bash -
+sudo apt update
 sudo apt-get install -y nodejs
+sudo apt-get install -y npm
 ```
 
 ## install mongodb
@@ -211,6 +218,12 @@ cd ~/github/ocr/pi
 tesseract uploadImage/current_frame.jpg testCurrent -l eng+chi_sim
 ```
 
+
+```sh
+npm install -g node-pre-gyp
+
+```
+
 # link
 
 https://ubuntu.com/download/raspberry-pi
@@ -243,3 +256,4 @@ https://youtu.be/GQJI4WiMuDk
 
 https://youtu.be/rgWVm_j3llo
 
+https://stackoverflow.com/a/15578473/7734634
