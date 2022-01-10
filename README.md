@@ -10,40 +10,37 @@ Webcam is from https://kaanlabs.com/rtmp-hls-webcam-live-streaming-with-hardware
 
 Download Ubuntu Server from page https://ubuntu.com/download/raspberry-pi
 
+Download raspberry-pi-imager from page https://www.raspberrypi.com/software/, use Raspberry Pi Imager to install Raspberry Pi OS(the last Ubuntu o). 
 The Ubuntu image for Raspberry Pi uses cloud-init to configure the system at boot time. This means that in your SD card system-boot volume, there should be a YAML file, called network-config. Open this file in VS Code (or your favourite text editor).
 
 Edit it so that it looks like the following. The indentation is important, and it's the 'wifis' section that you're editing to match your wifi configuration. Replace 'YOUR-WIFI-SSD' with your WiFi's name, and 'YOUR-WIFI-PASSWORD' with your WiFi password.
 edit network-config
 ```sh
-    version: 2
-    ethernets:
-       eth0:
-          dhcp4: true
-          optional: true
-    wifis:
-       wlan0:
-          dhcp4: true
-          optional: true
-          access-points:
-             "YOUR-WIFI-SSID":
-                password: "YOUR-WIFI-PASSWORD"
+version: 2
+ethernets:
+   eth0:
+      dhcp4: true
+      optional: true
+wifis:
+   wlan0:
+      dhcp4: true
+      optional: true
+      access-points:
+         "YOUR-WIFI-SSID":
+            password: "YOUR-WIFI-PASSWORD"
 ```
 
 ## enable ssh
 
 First logging in with keyboard and monitor, with username ubuntu and password ubuntu
 it will change the password first time.
-set the ssh key by
-```sh
-sudo rm /etc/ssh/ssh_host*
-sudo ssh-keygen -A
-```
-then reload ssh service
+reload ssh service
 ```sh
 sudo systemctl enable ssh.service
 sudo systemctl start ssh.service
 ```
 then you can connect raspberry pi with ssh.
+or repower the raspberry pi, it will connect auto.
 
 ## create ssh key
 Create ssh by ssh-keygen and add it. 
@@ -86,6 +83,7 @@ Install node.js and npm:
 
 ```sh
 sudo apt update
+sudo apt upgrade
 sudo apt-get install -y nodejs
 sudo apt-get install -y npm
 ```
@@ -101,12 +99,12 @@ install gcc library
 ```sh
 apt-get install build-essential
 ```
-I downloaded and compiled ffmpeg from the source. Download ffmpeg_4.4.orig.tar.xz
-https://launchpad.net/ubuntu/+source/ffmpeg
+I downloaded and compiled ffmpeg from the source. Download ffmpeg_4.2.4.orig.tar.xz
+https://launchpad.net/ubuntu/+source/ffmpeg (version 20.04.3 LTS The Focal Fossa)
 Unpack it.
 ```sh
-tar -xvf ffmpeg_4.4.orig.tar.xz
-cd ffmpeg-4.4
+tar -xvf ffmpeg_4.2.4.orig.tar.xz
+cd ffmpeg-4.2.4
 ./configure
 make
 sudo make install
@@ -116,15 +114,16 @@ sudo make install
 
 ```sh
 mkdir github
+cd github
 git clone https://github.com/dty717/ocr.git
 ```
 
 ```sh
 cd ocr/
-touch capture.js
-chmod +x capture.js
+touch index.js
+chmod +x index.js
 cd /lib/systemd/system
-sudo touch  ocr.service
+sudo touch ocr.service
 sudo nano ocr.service
 ```
 
@@ -173,17 +172,19 @@ sudo netplan try
 ## install tesseract
 
 ```sh
-sudo apt-get install g++ # or clang++ (presumably)
-sudo apt-get install autoconf automake libtool
-sudo apt-get install pkg-config
-sudo apt-get install libpng-dev
-sudo apt-get install libjpeg8-dev
-sudo apt-get install libtiff5-dev
-sudo apt-get install zlib1g-dev
-sudo apt-get install libicu-dev
-sudo apt-get install libpango1.0-dev
-sudo apt-get install libcairo2-dev
-sudo apt-get install libleptonica-dev
+sudo apt-get install -y g++ # or clang++ (presumably)
+sudo apt-get install -y autoconf
+sudo apt-get install -y automake
+sudo apt-get install -y libtool
+sudo apt-get install -y pkg-config
+sudo apt-get install -y libpng-dev
+sudo apt-get install -y libjpeg8-dev
+sudo apt-get install -y libtiff5-dev
+sudo apt-get install -y zlib1g-dev
+sudo apt-get install -y libicu-dev
+sudo apt-get install -y libpango1.0-dev
+sudo apt-get install -y libcairo2-dev
+sudo apt-get install -y libleptonica-dev
 cd ~/github
 git clone https://github.com/tesseract-ocr/tesseract.git
 cd tesseract
@@ -257,3 +258,5 @@ https://youtu.be/GQJI4WiMuDk
 https://youtu.be/rgWVm_j3llo
 
 https://stackoverflow.com/a/15578473/7734634
+
+https://www.rickmakes.com/cheap-hdmi-usb-capture-card-on-a-raspberry-pi-4/

@@ -336,5 +336,5 @@ wsServer.on('request', function(request) {
 app.use(express.static('webrtc-from-chat'));
 
 
-http.createServer(app).listen(80)
-https.createServer(httpsOptions, app).listen(443)
+http.createServer(app).listen(80);
+https.createServer(httpsOptions, app).listen(443);
