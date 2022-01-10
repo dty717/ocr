@@ -119,7 +119,8 @@ git clone https://github.com/dty717/ocr.git
 ```
 
 ```sh
-cd ocr/
+cd ocr/pi
+sudo npm install
 touch index.js
 chmod +x index.js
 cd /lib/systemd/system

@@ -2,7 +2,7 @@
 Description=ocr detect and upload
 After=multi-user.target
 [Service]
-ExecStart=/usr/bin/node /home/ubuntu/github/ocr/pi/capture.js
-User=ubuntu
+ExecStart=/usr/bin/node /home/ubuntu/github/ocr/pi/index.js
+User=root
 [Install]
 WantedBy=multi-user.target
