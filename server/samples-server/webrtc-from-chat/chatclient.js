@@ -17,11 +17,7 @@ var myHostname = window.location.hostname;
 if (!myHostname) {
   myHostname = "localhost";
 }
-
-const USERNAME="some-username"
-const PASSWORD="some-password"
-const PORT=3478
-const IP="123.57.22.64" // you will have to change this
+log("Hostname: " + myHostname);
 
 // WebSocket chat/signaling channel variables.
 
@@ -43,11 +39,7 @@ var clientID = 0;
 
 var mediaConstraints = {
   audio: true,            // We want an audio track
-  video: {
-    aspectRatio: {
-      ideal: 1.333333     // 3:2 aspect is preferred
-    }
-  }
+  video: true             // ...and we want a video track
 };
 
 var myUsername = null;
@@ -109,7 +101,12 @@ function connect() {
   if (document.location.protocol === "https:") {
     scheme += "s";
   }
-  serverUrl = scheme + "://" + myHostname + ":6503";
+  
+  // Build the URL of the WebSocket server. For Glitch, it's the same
+  // as the web server. In other instances, you may need to add
+  // ":<port number>".
+  
+  serverUrl = scheme + "://" + myHostname;
 
   log(`Connecting to server: ${serverUrl}`);
   connection = new WebSocket(serverUrl, "json");
@@ -232,9 +229,9 @@ async function createPeerConnection() {
   myPeerConnection = new RTCPeerConnection({
     iceServers: [     // Information about ICE servers - Use your own!
       {
-        url: `turn:${IP}:${PORT}`,
-        username: USERNAME,
-        credential: PASSWORD,
+        urls: "turn:" + myHostname,  // A TURN server
+        username: "webrtc",
+        credential: "turnserver"
       }
     ]
   });
@@ -326,7 +323,7 @@ function handleICECandidateEvent(event) {
 }
 
 // Handle |iceconnectionstatechange| events. This will detect
-// when the ICE connection is closed, failed, or disconnected.
+// when the ICE connection is closed, or failed.
 //
 // This is called when the state of the ICE agent changes.
 
@@ -336,7 +333,6 @@ function handleICEConnectionStateChangeEvent(event) {
   switch(myPeerConnection.iceConnectionState) {
     case "closed":
     case "failed":
-    case "disconnected":
       closeVideoCall();
       break;
   }
@@ -515,23 +511,23 @@ async function invite(evt) {
     // Get access to the webcam stream and attach it to the
     // "preview" box (id "local_video").
 
-    try {
-      webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      document.getElementById("local_video").srcObject = webcamStream;
-    } catch(err) {
-      handleGetUserMediaError(err);
-      return;
-    }
+//     try {
+//       webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+//       document.getElementById("local_video").srcObject = webcamStream;
+//     } catch(err) {
+//       handleGetUserMediaError(err);
+//       return;
+//     }
 
     // Add the tracks from the stream to the RTCPeerConnection
 
-    try {
-      webcamStream.getTracks().forEach(
-        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
-      );
-    } catch(err) {
-      handleGetUserMediaError(err);
-    }
+//     try {
+//       webcamStream.getTracks().forEach(
+//         transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
+//       );
+//     } catch(err) {
+//       handleGetUserMediaError(err);
+//     }
   }
 }
 
@@ -566,6 +562,7 @@ async function handleVideoOfferMsg(msg) {
       myPeerConnection.setLocalDescription({type: "rollback"}),
       myPeerConnection.setRemoteDescription(desc)
     ]);
+    
     return;
   } else {
     log ("  - Setting remote description");
@@ -575,24 +572,24 @@ async function handleVideoOfferMsg(msg) {
   // Get the webcam stream if we don't already have it
 
   if (!webcamStream) {
-    try {
-      webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    } catch(err) {
-      handleGetUserMediaError(err);
-      return;
-    }
+//     try {
+//       webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+//     } catch(err) {
+//       handleGetUserMediaError(err);
+//       return;
+//     }
 
-    document.getElementById("local_video").srcObject = webcamStream;
+//     document.getElementById("local_video").srcObject = webcamStream;
 
     // Add the camera stream to the RTCPeerConnection
 
-    try {
-      webcamStream.getTracks().forEach(
-        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
-      );
-    } catch(err) {
-      handleGetUserMediaError(err);
-    }
+//     try {
+//       webcamStream.getTracks().forEach(
+//         transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
+//       );
+//     } catch(err) {
+//       handleGetUserMediaError(err);
+//     }
   }
 
   log("---> Creating and sending answer to caller");

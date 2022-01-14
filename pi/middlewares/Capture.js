@@ -4,7 +4,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const net = require('net');
-const { WriteData, ReadDataArea } = require('../Mewtocol');
+const { WriteData, ReadDataArea } = require('./Mewtocol');
 const mongoose = require('mongoose');
 
 
@@ -16,12 +16,14 @@ const shiftTimeZone = 8
 //var PLC_Config={host:"server.delinapi.top:3000" , port: 9001 }
 // var PLC_Config={host:"192.168.0.101" , port: 60002 }
 var PLC_Config = { host: "192.168.0.123", port: 60001 }
-var ffmpegConfig = ["-f", "v4l2", "-framerate", "30", "-video_size", "1024x576", "-i", "/dev/video0", "myvideo.mp4", "-r", "1", "-update", "1", "../uploadImage/current_frame.jpg", "-y", "-y"];
+var ffmpegConfig = ["-f", "v4l2", "-framerate", "30", "-video_size", "1024x576", "-i", "/dev/video0", "myvideo.mp4", "-r", "1", "-update", "1", "uploadImage/current_frame.jpg", "-y", "-y"];
 var uploadURL = "http://server.delinapi.top:3000/ocr";
 // var uploadURL = "http://192.168.137.1:3000/ocr";
 var uploadTime = 10 * 60 * 1000;
 
 const SmartDetectHistory = mongoose.model('SmartDetectHistory');
+
+var selectedValue;
 
 function capatureAndUpload() {
   var ffmpeg = spawn("ffmpeg", ffmpegConfig);

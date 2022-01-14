@@ -114,6 +114,9 @@ fs.readFile('./json/test.json', 'utf8', (err, data) => {
      * 
      */
     data = JSON.parse(data)
+    if (!data || !data.fullTextAnnotation || !data.fullTextAnnotation.text) {
+        return;
+    }
     var text = data.fullTextAnnotation.text;
     if (text.match(/基线|基值/) && text.match(/滴定体积|峰值/)) {
         /**

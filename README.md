@@ -5,6 +5,7 @@ pi/test/version/ is from https://www.w3schools.com/nodejs/nodejs_raspberrypi_rgb
 
 Webcam is from https://kaanlabs.com/rtmp-hls-webcam-live-streaming-with-hardware-accelerated-h264-on-a-raspberry-pi/ for webcam live
 
+https://askubuntu.com/a/508337/1151021
 
 ## install Ubuntu
 
@@ -84,6 +85,7 @@ Install node.js and npm:
 ```sh
 sudo apt update
 sudo apt upgrade
+curl -fsSL https://deb.nodesource.com/setup_17.x | sudo -E bash -
 sudo apt-get install -y nodejs
 sudo apt-get install -y npm
 ```
@@ -121,8 +123,8 @@ git clone https://github.com/dty717/ocr.git
 ```sh
 cd ocr/pi
 sudo npm install
-touch index.js
-chmod +x index.js
+touch startOCR.sh
+chmod +x startOCR.sh
 cd /lib/systemd/system
 sudo touch ocr.service
 sudo nano ocr.service
@@ -159,6 +161,11 @@ network:
                     password: '12345678'
             dhcp4: true
             optional: true
+        wlan0:
+            access-points:
+                "other-network-ssid":
+                    password: 'other-network-password'
+            dhcp4: true
     ethernets:
         eth0:
             addresses:
@@ -168,8 +175,10 @@ network:
 ```sh
 sudo netplan generate
 sudo netplan try
-# sudo netplan apply
+sudo netplan apply #be careful with the above commond no error and can be runned!!!
 ```
+
+
 ## install tesseract
 
 ```sh
@@ -240,7 +249,7 @@ https://forums.raspberrypi.com/viewtopic.php?t=125367#p1176686
 
 https://roboticsbackend.com/make-a-raspberry-pi-3-program-start-on-boot/
 
-https://github.com/nodesource/distributions/edit/master/README.md
+https://github.com/nodesource/distributions
 
 https://stackoverflow.com/a/61444221/7734634
 
@@ -261,3 +270,5 @@ https://youtu.be/rgWVm_j3llo
 https://stackoverflow.com/a/15578473/7734634
 
 https://www.rickmakes.com/cheap-hdmi-usb-capture-card-on-a-raspberry-pi-4/
+
+https://unix.stackexchange.com/a/458963/412884

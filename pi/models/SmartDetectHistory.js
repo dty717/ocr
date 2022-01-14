@@ -10,7 +10,6 @@ var SmartDetectHistorySchema = new mongoose.Schema({
         required:true
     },
     sampleType:{
-        //样品信息
         type:String,
         required:true
     },

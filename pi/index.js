@@ -10,8 +10,7 @@ require('./models/SmartDetectHistory');
 require('./middlewares/Capture');
 
 
-const mongoUri = 'mongodb://admin:SUPERSECRETPASSWORD@127.0.0.1:27017/ocrDB?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false'
-var selectedValue;
+const mongoUri = 'mongodb://admin:SUPERSECRETPASSWORD@127.0.0.1:27017/ocrDB?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false'
 
 if (!mongoUri) {
   throw new Error(
