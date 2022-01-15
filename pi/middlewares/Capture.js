@@ -7,6 +7,7 @@ const net = require('net');
 const { WriteData, ReadDataArea } = require('./Mewtocol');
 const mongoose = require('mongoose');
 
+require('./client');
 
 const buffer = new ArrayBuffer(4);
 const f32 = new Float32Array(buffer); // [0]
@@ -14,8 +15,8 @@ const ui8 = new Uint8Array(buffer); // [0, 0, 0, 0]
 const { logger, _time_ } = require("./Logger")
 const shiftTimeZone = 8
 //var PLC_Config={host:"server.delinapi.top:3000" , port: 9001 }
-// var PLC_Config={host:"192.168.0.101" , port: 60002 }
-var PLC_Config = { host: "192.168.0.123", port: 60001 }
+// var PLC_Config={host:"192.168.8.101" , port: 60002 }
+var PLC_Config = { host: "192.168.8.123", port: 60001 }
 var ffmpegConfig = ["-f", "v4l2", "-framerate", "30", "-video_size", "1024x576", "-i", "/dev/video0", "myvideo.mp4", "-r", "1", "-update", "1", "uploadImage/current_frame.jpg", "-y", "-y"];
 var uploadURL = "http://server.delinapi.top:3000/ocr";
 // var uploadURL = "http://192.168.137.1:3000/ocr";

@@ -1,6 +1,7 @@
 
 var WebSocketClient = require('websocket').client;
 const { RTCPeerConnection, getUserMedia, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
+const dgram = require('dgram')
 
 var username = "USER"
 var credential = "PASSWORD"
@@ -9,7 +10,8 @@ var url = "stun.delinapi.top" // you will have to change this
 
 
 var client = new WebSocketClient();
-var myHostname = 'webrtc-from-chat.glitch.me';
+// var myHostname = 'webrtc-from-chat.glitch.me';
+var myHostname = 'server.delinapi.top';
 
 
 // WebSocket chat/signaling channel variables.
@@ -112,7 +114,7 @@ function connect() {
 
         });
     });
-    client.connect('wss://' + myHostname, 'json', "https://" + myHostname,
+    client.connect('wss://' + myHostname + ":6503", 'json', "https://" + myHostname + ":3443",
         {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
         }
@@ -127,10 +129,16 @@ function handleUserlistMsg(msg) {
     var i;
 
     // Add member names from the received list.
-
+    var user;
     msg.users.forEach(function (username, index) {
         console.log(index, username);
+        if (username != myUsername) {
+            user = username;
+        }
     });
+    // console.log({ invite, user })
+    if(user)
+       invite(user);
 }
 
 
@@ -235,9 +243,9 @@ async function createPeerConnection() {
     sendChannel = myPeerConnection.createDataChannel("sendChannel");
     sendChannel.onopen = handleSendChannelStatusChange;
     sendChannel.onclose = handleSendChannelStatusChange;
-    setTimeout(()=>{
+    setTimeout(() => {
         myPeerConnection.videoState = true;
-    },3000);
+    }, 3000);
 }
 
 function handleSendChannelStatusChange(event) {
@@ -648,20 +656,20 @@ function reportError(errMessage) {
 const server = dgram.createSocket('udp4');
 
 server.on('error', (err) => {
-  console.log(`server error:\n${err.stack}`);
-  server.close();
+    console.log(`server error:\n${err.stack}`);
+    server.close();
 });
 
 server.on('message', (msg, rinfo) => {
-    if(myPeerConnection&&myPeerConnection.videoState&&(sendChannel.readyState=='open')){
+    if (myPeerConnection && myPeerConnection.videoState && (sendChannel.readyState == 'open')) {
         sendChannel.send(msg);
     }
-//   console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+    //   console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
 });
 
 server.on('listening', () => {
-  const address = server.address();
-  console.log(`server listening ${address.address}:${address.port}`);
+    const address = server.address();
+    console.log(`server listening ${address.address}:${address.port}`);
 });
 
 server.bind(49999);
