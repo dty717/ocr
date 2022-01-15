@@ -24,4 +24,3 @@ ffmpeg \
 		-codec:v mpeg1video -s 640x480 -b:v 1000k -bf 0 \
 	udp://127.0.0.1:49999
 
-    

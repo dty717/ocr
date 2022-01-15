@@ -11,7 +11,7 @@ var url = "stun.delinapi.top" // you will have to change this
 
 var client = new WebSocketClient();
 // var myHostname = 'webrtc-from-chat.glitch.me';
-var myHostname = 'server.delinapi.top';
+var myHostname = 'test.dty71719dfd.site';
 
 
 // WebSocket chat/signaling channel variables.

@@ -1,7 +1,7 @@
 // Imports the Google Cloud client library
 const vision = require('@google-cloud/vision');
 const fs = require('fs');
-var fileName = 'IMG_3878.jpg';
+var fileName = 'current_frame.jpg';
 
 async function setEndpoint(path) {
     // Specifies the location of the api endpoint
