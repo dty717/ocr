@@ -26,8 +26,8 @@ var mediaConstraints = {
     }
 };
 
-var myUsername = null;
-var targetUsername = null;      // To store username of other peer
+var deviceID = null;
+var targetDeviceID = null;      // To store deviceID of other peer
 var myPeerConnection = null;    // RTCPeerConnection
 var transceiver = null;         // RTCRtpTransceiver
 var webcamStream = null;        // MediaStream from webcam
@@ -62,21 +62,21 @@ function connect() {
             switch (message.type) {
                 case "id":
                     clientID = message.id;
-                    setUsername();
+                    setDeviceID();
                     break;
-                case "username":
-                    text = "<b>User <em>" + message.name + "</em> signed in at " + timeStr + "</b><br>";
+                case "deviceID":
+                    text = "<b>Device <em>" + message.name + "</em> signed in at " + timeStr + "</b><br>";
                     break;
                 case "message":
                     text = "(" + timeStr + ") <b>" + message.name + "</b>: " + message.text + "<br>";
                     break;
-                case "rejectusername":
-                    myUsername = message.name;
-                    text = "<b>Your username has been set to <em>" + myUsername +
+                case "rejectdeviceID":
+                    deviceID = message.name;
+                    text = "<b>Your deviceID has been set to <em>" + deviceID +
                         "</em> because the name you chose is in use.</b><br>";
                     break;
-                case "userlist":      // Received an updated user list
-                    handleUserlistMsg(message);
+                case "devicelist":      // Received an updated device list
+                    handleDevicelistMsg(message);
                     break;
                 // Signaling messages: these messages are used to trade WebRTC
                 // signaling information during negotiations leading up to a video
@@ -121,43 +121,42 @@ function connect() {
     );
 }
 
-// Given a message containing a list of usernames, this function
-// populates the user list box with those names, making each item
+// Given a message containing a list of deviceIDs, this function
+// populates the device list box with those names, making each item
 // clickable to allow starting a video call.
 
-function handleUserlistMsg(msg) {
+function handleDevicelistMsg(msg) {
     var i;
 
     // Add member names from the received list.
-    var user;
-    msg.users.forEach(function (username, index) {
-        console.log(index, username);
-        if (username != myUsername) {
-            user = username;
+    var device;
+    msg.devices.forEach(function (deviceID, index) {
+        console.log(index, deviceID);
+        if (deviceID != deviceID) {
+            device = deviceID;
         }
     });
-    // console.log({ invite, user })
-    if(user)
-       invite(user);
+    // console.log({ invite, device })
+    if(device)
+       invite(device);
 }
 
 
 
 // Called when the "id" message is received; this message is sent by the
 // server to assign this login session a unique ID number; in response,
-// this function sends a "username" message to set our username for this
+// this function sends a "deviceID" message to set our deviceID for this
 // session.
-function setUsername() {
-    myUsername = new Date().toISOString().substring(13, 23);
+function setDeviceID() {
+    deviceID = new Date().toISOString().substring(13, 23);
     sendToServer({
-        name: myUsername,
+        name: deviceID,
         date: Date.now(),
         id: clientID,
-        type: "username"
+        type: "deviceID"
     });
 }
 var log = () => { }
-
 
 function sendToServer(msg) {
     console.log('send', msg)
@@ -288,8 +287,8 @@ async function handleNegotiationNeededEvent() {
 
         log("---> Sending the offer to the remote peer");
         sendToServer({
-            name: myUsername,
-            target: targetUsername,
+            name: deviceID,
+            target: targetDeviceID,
             type: "video-offer",
             sdp: myPeerConnection.localDescription
         });
@@ -329,7 +328,7 @@ function handleICECandidateEvent(event) {
 
         sendToServer({
             type: "new-ice-candidate",
-            target: targetUsername,
+            target: targetDeviceID,
             candidate: event.candidate
         });
     }
@@ -382,9 +381,9 @@ function handleICEGatheringStateChangeEvent(event) {
     log("*** ICE gathering state changed to: " + myPeerConnection.iceGatheringState);
 }
 
-// Close the RTCPeerConnection and reset variables so that the user can
+// Close the RTCPeerConnection and reset variables so that the device can
 // make or receive another call if they wish. This is called both
-// when the user hangs up, the other user hangs up, or if a connection
+// when the device hangs up, the other device hangs up, or if a connection
 // failure is detected.
 
 function closeVideoCall() {
@@ -434,7 +433,7 @@ function closeVideoCall() {
     // Disable the hangup button
 
     // document.getElementById("hangup-button").disabled = true;
-    targetUsername = null;
+    targetDeviceID = null;
 }
 
 // Handle the "hang-up" message, which is sent if the other peer
@@ -456,42 +455,42 @@ function hangUpCall() {
     closeVideoCall();
 
     sendToServer({
-        name: myUsername,
-        target: targetUsername,
+        name: deviceID,
+        target: targetDeviceID,
         type: "hang-up"
     });
 }
 
-// Handle a click on an item in the user list by inviting the clicked
-// user to video chat. Note that we don't actually send a message to
+// Handle a click on an item in the device list by inviting the clicked
+// device to video chat. Note that we don't actually send a message to
 // the callee here -- calling RTCPeerConnection.addTrack() issues
 // a |notificationneeded| event, so we'll let our handler for that
 // make the offer.
 
-async function invite(clickedUsername) {
+async function invite(clickedDeviceID) {
     log("Starting to prepare an invitation");
     if (myPeerConnection) {
         alert("You can't start a call because you already have one open!");
     } else {
 
-        // Don't allow users to call themselves, because weird.
+        // Don't allow devices to call themselves, because weird.
 
-        if (clickedUsername === myUsername) {
+        if (clickedDeviceID === deviceID) {
             alert("I'm afraid I can't let you talk to yourself. That would be weird.");
             return;
         }
 
-        // Record the username being called for future reference
+        // Record the deviceID being called for future reference
 
-        targetUsername = clickedUsername;
-        log("Inviting user " + targetUsername);
+        targetDeviceID = clickedDeviceID;
+        log("Inviting device " + targetDeviceID);
 
         // Call createPeerConnection() to create the RTCPeerConnection.
         // When this returns, myPeerConnection is our RTCPeerConnection
         // and webcamStream is a stream coming from the camera. They are
         // not linked together in any way yet.
 
-        log("Setting up connection to invite user: " + targetUsername);
+        log("Setting up connection to invite device: " + targetDeviceID);
         createPeerConnection();
 
         // Get access to the webcam stream and attach it to the
@@ -521,12 +520,12 @@ async function invite(clickedUsername) {
 // stream, then create and send an answer to the caller.
 
 async function handleVideoOfferMsg(msg) {
-    targetUsername = msg.name;
+    targetDeviceID = msg.name;
 
     // If we're not already connected, create an RTCPeerConnection
     // to be linked to the caller.
 
-    log("Received video chat offer from " + targetUsername);
+    log("Received video chat offer from " + targetDeviceID);
     if (!myPeerConnection) {
         createPeerConnection();
     }
@@ -581,8 +580,8 @@ async function handleVideoOfferMsg(msg) {
     await myPeerConnection.setLocalDescription(await myPeerConnection.createAnswer());
 
     sendToServer({
-        name: myUsername,
-        target: targetUsername,
+        name: deviceID,
+        target: targetDeviceID,
         type: "video-answer",
         sdp: myPeerConnection.localDescription
     });
@@ -618,7 +617,7 @@ async function handleNewICECandidateMsg(msg) {
 
 // Handle errors which occur when trying to access the local media
 // hardware; that is, exceptions thrown by getUserMedia(). The two most
-// likely scenarios are that the user has no camera and/or microphone
+// likely scenarios are that the device has no camera and/or microphone
 // or that they declined to share their equipment when prompted. If
 // they simply opted not to share their media, that's not really an
 // error, so we won't present a message in that situation.
@@ -632,7 +631,7 @@ function handleGetUserMediaError(e) {
             break;
         case "SecurityError":
         case "PermissionDeniedError":
-            // Do nothing; this is the same as the user canceling the call.
+            // Do nothing; this is the same as the device canceling the call.
             break;
         default:
             alert("Error opening your camera and/or microphone: " + e.message);
