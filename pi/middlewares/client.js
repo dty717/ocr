@@ -2,17 +2,12 @@
 var WebSocketClient = require('websocket').client;
 const { RTCPeerConnection, getUserMedia, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
 const dgram = require('dgram')
+const { spawn } = require('child_process');
+const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname,deviceID, company } = require('./Config');
 
-var username = "USER"
-var credential = "PASSWORD"
-var port = 3478
-var url = "stun.delinapi.top" // you will have to change this
-
+const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } };
 
 var client = new WebSocketClient();
-// var myHostname = 'webrtc-from-chat.glitch.me';
-var myHostname = 'test.dty71719dfd.site';
-
 
 // WebSocket chat/signaling channel variables.
 var clientID = 0;
@@ -26,14 +21,62 @@ var mediaConstraints = {
     }
 };
 
-var deviceID = null;
-var targetDeviceID = null;      // To store deviceID of other peer
+var targetUsername = null;      // To store deviceID of other peer
 var myPeerConnection = null;    // RTCPeerConnection
 var transceiver = null;         // RTCRtpTransceiver
 var webcamStream = null;        // MediaStream from webcam
 var wsConnection = null;
 
 var sendChannel = null;       // RTCDataChannel for the local (sender)
+
+
+function inspect() {
+    var ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
+  
+    ffmpeg.stdout.on('data', (data) => {
+        //   setTimeout(() => {
+        //     ffmpeg.kill('SIGHUP');
+        //   }, 3000)
+        console.log('ffmpeg client data ok');
+      // logger.log(_time_(new Date()), `stdout: ${data}`);
+    });
+  
+    ffmpeg.stderr.on('data', (data) => {
+    //   setTimeout(() => {
+    //     ffmpeg.kill('SIGHUP');
+    //   }, 6000)
+        console.log('ffmpeg client data err');
+      // logger.log(_time_(new Date()), `stderr: ${data}`);
+    });
+  
+    ffmpeg.on('close', (code) => {
+        console.log('ffmpeg client close');
+    //   logger.log(_time_(new Date()), `child process close with code ${code}`);
+    });
+  
+    ffmpeg.on('exit', (code) => {
+        console.log('ffmpeg client exit');
+    //   const form = new FormData();
+    //   form.append('company', company);
+    //   form.append('deviceID', deviceID);
+    //   form.append('uploadImage', fs.createReadStream('uploadImage/current_frame.jpg'));
+    //   if (selectedValue != undefined) {
+    //     form.append('selectedValue', selectedValue);
+    //   }
+    //   axios.post(uploadURL, form, { headers: form.getHeaders() }).then(async ({ data }) => {
+    //     logger.log(_time_(new Date()), data);
+    //     if (data && data.time) {
+    //       await new SmartDetectHistory(data).save()
+    //       setData(data);
+    //     }
+    //   }).catch(function (error) {
+    //     logger.log(_time_(new Date()), "server error",error.message);
+    //   })
+    //   .then(function () {
+    //   });
+    //   logger.log(_time_(new Date()), `child process exited with code ${code}`);
+    });
+  }
 
 function connect() {
 
@@ -44,10 +87,12 @@ function connect() {
     client.on('connect', function (connection) {
         console.log('WebSocket Client Connected');
         wsConnection = connection;
+        clientState.wsState.connect = true;
         connection.on('error', function (error) {
             console.log("Connection Error: " + error.toString());
         });
         connection.on('close', function () {
+            clientState.wsState.connect = false;
             console.log('echo-protocol Connection Closed');
         });
         connection.on('message', function (message) {
@@ -75,8 +120,8 @@ function connect() {
                     text = "<b>Your deviceID has been set to <em>" + deviceID +
                         "</em> because the name you chose is in use.</b><br>";
                     break;
-                case "devicelist":      // Received an updated device list
-                    handleDevicelistMsg(message);
+                case "user":      // Received an updated device list
+                    handleUserMsg(message);
                     break;
                 // Signaling messages: these messages are used to trade WebRTC
                 // signaling information during negotiations leading up to a video
@@ -114,7 +159,7 @@ function connect() {
 
         });
     });
-    client.connect('wss://' + myHostname + ":6503", 'json', "https://" + myHostname + ":3443",
+    client.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
         {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
         }
@@ -125,20 +170,9 @@ function connect() {
 // populates the device list box with those names, making each item
 // clickable to allow starting a video call.
 
-function handleDevicelistMsg(msg) {
-    var i;
-
-    // Add member names from the received list.
-    var device;
-    msg.devices.forEach(function (deviceID, index) {
-        console.log(index, deviceID);
-        if (deviceID != deviceID) {
-            device = deviceID;
-        }
-    });
-    // console.log({ invite, device })
-    if(device)
-       invite(device);
+function handleUserMsg(msg) {
+    if (msg.username)
+        invite(msg.username);
 }
 
 
@@ -148,7 +182,7 @@ function handleDevicelistMsg(msg) {
 // this function sends a "deviceID" message to set our deviceID for this
 // session.
 function setDeviceID() {
-    deviceID = new Date().toISOString().substring(13, 23);
+    // deviceID = new Date().toISOString().substring(13, 23);
     sendToServer({
         name: deviceID,
         date: Date.now(),
@@ -163,8 +197,8 @@ function sendToServer(msg) {
     var msgJSON = JSON.stringify(msg);
     wsConnection.sendUTF(msgJSON);
 }
-connect()
 
+connect()
 
 // Output logging information to console.
 
@@ -222,9 +256,9 @@ async function createPeerConnection() {
     myPeerConnection = new RTCPeerConnection({
         iceServers: [     // Information about ICE servers - Use your own!
             {
-                urls: "turn:" + url + ":" + port,  // A TURN server
-                username,
-                credential
+                urls: "turn:" + stunURL + ":" + stunPort,  // A TURN server
+                username: stunUsername,
+                credential: stunCredential
             }
         ]
     });
@@ -250,7 +284,11 @@ async function createPeerConnection() {
 function handleSendChannelStatusChange(event) {
     if (sendChannel) {
         var state = sendChannel.readyState;
-        console.log({ state });
+        if(state=='open'){
+            clientState.RTCState.connect = true;
+            clientState.isInspected = true;
+
+        }
     }
 }
 
@@ -288,7 +326,8 @@ async function handleNegotiationNeededEvent() {
         log("---> Sending the offer to the remote peer");
         sendToServer({
             name: deviceID,
-            target: targetDeviceID,
+            target: targetUsername,
+            option: "username",
             type: "video-offer",
             sdp: myPeerConnection.localDescription
         });
@@ -328,7 +367,8 @@ function handleICECandidateEvent(event) {
 
         sendToServer({
             type: "new-ice-candidate",
-            target: targetDeviceID,
+            target: targetUsername,
+            option: "username",
             candidate: event.candidate
         });
     }
@@ -433,7 +473,7 @@ function closeVideoCall() {
     // Disable the hangup button
 
     // document.getElementById("hangup-button").disabled = true;
-    targetDeviceID = null;
+    targetUsername = null;
 }
 
 // Handle the "hang-up" message, which is sent if the other peer
@@ -456,7 +496,8 @@ function hangUpCall() {
 
     sendToServer({
         name: deviceID,
-        target: targetDeviceID,
+        target: targetUsername,
+        option: "username",
         type: "hang-up"
     });
 }
@@ -467,30 +508,30 @@ function hangUpCall() {
 // a |notificationneeded| event, so we'll let our handler for that
 // make the offer.
 
-async function invite(clickedDeviceID) {
+async function invite(username) {
     log("Starting to prepare an invitation");
     if (myPeerConnection) {
         alert("You can't start a call because you already have one open!");
     } else {
 
-        // Don't allow devices to call themselves, because weird.
+        // // Don't allow devices to call themselves, because weird.
 
-        if (clickedDeviceID === deviceID) {
-            alert("I'm afraid I can't let you talk to yourself. That would be weird.");
-            return;
-        }
+        // if (username === deviceID) {
+        //     alert("I'm afraid I can't let you talk to yourself. That would be weird.");
+        //     return;
+        // }
 
         // Record the deviceID being called for future reference
 
-        targetDeviceID = clickedDeviceID;
-        log("Inviting device " + targetDeviceID);
+        targetUsername = username;
+        log("Inviting device " + targetUsername);
 
         // Call createPeerConnection() to create the RTCPeerConnection.
         // When this returns, myPeerConnection is our RTCPeerConnection
         // and webcamStream is a stream coming from the camera. They are
         // not linked together in any way yet.
 
-        log("Setting up connection to invite device: " + targetDeviceID);
+        log("Setting up connection to invite device: " + targetUsername);
         createPeerConnection();
 
         // Get access to the webcam stream and attach it to the
@@ -520,12 +561,12 @@ async function invite(clickedDeviceID) {
 // stream, then create and send an answer to the caller.
 
 async function handleVideoOfferMsg(msg) {
-    targetDeviceID = msg.name;
+    targetUsername = msg.name;
 
     // If we're not already connected, create an RTCPeerConnection
     // to be linked to the caller.
 
-    log("Received video chat offer from " + targetDeviceID);
+    log("Received video chat offer from " + targetUsername);
     if (!myPeerConnection) {
         createPeerConnection();
     }
@@ -581,7 +622,8 @@ async function handleVideoOfferMsg(msg) {
 
     sendToServer({
         name: deviceID,
-        target: targetDeviceID,
+        target: targetUsername,
+        option: "username",
         type: "video-answer",
         sdp: myPeerConnection.localDescription
     });
@@ -672,3 +714,6 @@ server.on('listening', () => {
 });
 
 server.bind(49999);
+
+
+module.exports = {clientState}

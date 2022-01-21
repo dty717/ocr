@@ -6,8 +6,8 @@ const mongoose = require('mongoose');
 
 require('./models/SmartDetectHistory');
 
-
 require('./middlewares/Capture');
+require('./middlewares/Client');
 
 
 const mongoUri = 'mongodb://admin:SUPERSECRETPASSWORD@127.0.0.1:27017/ocrDB?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false'
