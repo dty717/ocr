@@ -21,7 +21,7 @@ var mediaConstraints = {
     }
 };
 
-var targetUsername = null;      // To store deviceID of other peer
+var targetUserID = null;      // To store deviceID of other peer
 var myPeerConnection = null;    // RTCPeerConnection
 var transceiver = null;         // RTCRtpTransceiver
 var webcamStream = null;        // MediaStream from webcam
@@ -29,33 +29,36 @@ var wsConnection = null;
 
 var sendChannel = null;       // RTCDataChannel for the local (sender)
 
-
+var ffmpeg;
+var lastInfo = '';
 function inspect() {
-    var ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
-  
+    ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
+
     ffmpeg.stdout.on('data', (data) => {
         //   setTimeout(() => {
         //     ffmpeg.kill('SIGHUP');
         //   }, 3000)
         console.log('ffmpeg client data ok');
-      // logger.log(_time_(new Date()), `stdout: ${data}`);
+        // logger.log(_time_(new Date()), `stdout: ${data}`);
     });
   
     ffmpeg.stderr.on('data', (data) => {
-    //   setTimeout(() => {
-    //     ffmpeg.kill('SIGHUP');
-    //   }, 6000)
-        console.log('ffmpeg client data err');
-      // logger.log(_time_(new Date()), `stderr: ${data}`);
+        //   setTimeout(() => {
+        //     ffmpeg.kill('SIGHUP');
+        //   }, 6000)
+        console.log('ffmpeg client data err', new String(data));
+        lastInfo = new String(data);
+        // logger.log(_time_(new Date()), `stderr: ${data}`);
     });
   
     ffmpeg.on('close', (code) => {
         console.log('ffmpeg client close');
-    //   logger.log(_time_(new Date()), `child process close with code ${code}`);
+        //   logger.log(_time_(new Date()), `child process close with code ${code}`);
     });
   
     ffmpeg.on('exit', (code) => {
-        console.log('ffmpeg client exit');
+        console.log('ffmpeg client exit with lastInfo',lastInfo);
+        
     //   const form = new FormData();
     //   form.append('company', company);
     //   form.append('deviceID', deviceID);
@@ -171,8 +174,8 @@ function connect() {
 // clickable to allow starting a video call.
 
 function handleUserMsg(msg) {
-    if (msg.username)
-        invite(msg.username);
+    if (msg.id)
+        invite(msg.id);
 }
 
 
@@ -284,10 +287,26 @@ async function createPeerConnection() {
 function handleSendChannelStatusChange(event) {
     if (sendChannel) {
         var state = sendChannel.readyState;
-        if(state=='open'){
-            clientState.RTCState.connect = true;
-            clientState.isInspected = true;
-
+        console.log({state});
+        switch (state) {
+            case 'open':
+                clientState.RTCState.connect = true;
+                clientState.isInspected = true;
+                setTimeout(() => {
+                    sendToServer({
+                        id: clientID,
+                        target: targetUserID,
+                        option: "clientID",
+                        type: "busy",
+                    });
+                    inspect();
+                }, 1000);
+                break;
+            case 'closed':
+                handleHangUpMsg();
+                break;
+            default:
+                break;
         }
     }
 }
@@ -326,8 +345,8 @@ async function handleNegotiationNeededEvent() {
         log("---> Sending the offer to the remote peer");
         sendToServer({
             name: deviceID,
-            target: targetUsername,
-            option: "username",
+            target: targetUserID,
+            option: "clientID",
             type: "video-offer",
             sdp: myPeerConnection.localDescription
         });
@@ -367,8 +386,8 @@ function handleICECandidateEvent(event) {
 
         sendToServer({
             type: "new-ice-candidate",
-            target: targetUsername,
-            option: "username",
+            target: targetUserID,
+            option: "clientID",
             candidate: event.candidate
         });
     }
@@ -468,12 +487,15 @@ function closeVideoCall() {
         myPeerConnection.close();
         myPeerConnection = null;
         webcamStream = null;
+        if(ffmpeg){
+            ffmpeg.kill('SIGHUP');
+        }
     }
 
     // Disable the hangup button
 
     // document.getElementById("hangup-button").disabled = true;
-    targetUsername = null;
+    targetUserID = null;
 }
 
 // Handle the "hang-up" message, which is sent if the other peer
@@ -481,7 +503,12 @@ function closeVideoCall() {
 
 function handleHangUpMsg(msg) {
     log("*** Received hang up notification from other peer");
-
+    
+    sendToServer({
+        id: clientID,
+        target: targetUserID,
+        type: "idle"
+    });
     closeVideoCall();
 }
 
@@ -496,8 +523,8 @@ function hangUpCall() {
 
     sendToServer({
         name: deviceID,
-        target: targetUsername,
-        option: "username",
+        target: targetUserID,
+        option: "clientID",
         type: "hang-up"
     });
 }
@@ -508,7 +535,7 @@ function hangUpCall() {
 // a |notificationneeded| event, so we'll let our handler for that
 // make the offer.
 
-async function invite(username) {
+async function invite(userID) {
     log("Starting to prepare an invitation");
     if (myPeerConnection) {
         alert("You can't start a call because you already have one open!");
@@ -523,15 +550,15 @@ async function invite(username) {
 
         // Record the deviceID being called for future reference
 
-        targetUsername = username;
-        log("Inviting device " + targetUsername);
+        targetUserID = userID;
+        log("Inviting device " + targetUserID);
 
         // Call createPeerConnection() to create the RTCPeerConnection.
         // When this returns, myPeerConnection is our RTCPeerConnection
         // and webcamStream is a stream coming from the camera. They are
         // not linked together in any way yet.
 
-        log("Setting up connection to invite device: " + targetUsername);
+        log("Setting up connection to invite device: " + targetUserID);
         createPeerConnection();
 
         // Get access to the webcam stream and attach it to the
@@ -561,12 +588,12 @@ async function invite(username) {
 // stream, then create and send an answer to the caller.
 
 async function handleVideoOfferMsg(msg) {
-    targetUsername = msg.name;
+    targetUserID = msg.name;
 
     // If we're not already connected, create an RTCPeerConnection
     // to be linked to the caller.
 
-    log("Received video chat offer from " + targetUsername);
+    log("Received video chat offer from " + targetUserID);
     if (!myPeerConnection) {
         createPeerConnection();
     }
@@ -622,8 +649,8 @@ async function handleVideoOfferMsg(msg) {
 
     sendToServer({
         name: deviceID,
-        target: targetUsername,
-        option: "username",
+        target: targetUserID,
+        option: "clientID",
         type: "video-answer",
         sdp: myPeerConnection.localDescription
     });

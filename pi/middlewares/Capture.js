@@ -17,9 +17,9 @@ const { logger, _time_ } = require("./Logger")
 const SmartDetectHistory = mongoose.model('SmartDetectHistory');
 
 var selectedValue;
-
+var ffmpeg;
 function capatureAndUpload() {
-  var ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
+  ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
 
   ffmpeg.stdout.on('data', (data) => {
     setTimeout(() => {
