@@ -1,6 +1,10 @@
 # Logs
 logs
 *.log
+*.ts
+*.m3u8
+*.mp4
+*.jpg
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
