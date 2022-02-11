@@ -3,9 +3,9 @@ var WebSocketClient = require('websocket').client;
 const { RTCPeerConnection, getUserMedia, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
 const dgram = require('dgram')
 const { spawn } = require('child_process');
-const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname,deviceID, company } = require('./Config');
+const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname, deviceID, camNormal, camNotExist, camBusy } = require('./Config');
 
-const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } };
+const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } ,camState:{state : camNormal}};
 
 var client = new WebSocketClient();
 
@@ -31,6 +31,10 @@ var sendChannel = null;       // RTCDataChannel for the local (sender)
 
 var ffmpeg;
 var lastInfo = '';
+
+var retries = 0;
+var maxRetries = 10;
+
 function inspect() {
     ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
 
@@ -57,8 +61,26 @@ function inspect() {
     });
   
     ffmpeg.on('exit', (code) => {
-        console.log('ffmpeg client exit with lastInfo',lastInfo);
-        
+        console.log('ffmpeg client exit');
+        if(lastInfo.indexOf('No such file or directory')!=-1){
+            clientState.camState.state = camNotExist;
+            sendToServer({
+                type: "error",
+                target: targetUserID,
+                option: "clientID",
+                date: Date.now(),
+                content: "摄像头未连接"
+            });
+        } else if (lastInfo.indexOf('Device or resource busy') != -1) {
+            clientState.camState.state = camBusy;
+            sendToServer({
+                type: "error",
+                target: targetUserID,
+                option: "clientID",
+                date: Date.now(),
+                content: "摄像头连接错误"
+            });
+        }
     //   const form = new FormData();
     //   form.append('company', company);
     //   form.append('deviceID', deviceID);
@@ -91,12 +113,30 @@ function connect() {
         console.log('WebSocket Client Connected');
         wsConnection = connection;
         clientState.wsState.connect = true;
+        retries = 0;
         connection.on('error', function (error) {
             console.log("Connection Error: " + error.toString());
         });
         connection.on('close', function () {
             clientState.wsState.connect = false;
             console.log('echo-protocol Connection Closed');
+            if (retries < maxRetries) {
+                // Exponentially increase timeout to reconnect.
+                // Respectfully copied from the package `got`.
+                // eslint-disable-next-line no-restricted-properties
+                var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
+                retries += 1;
+                console.log("Trying to reconnect...");
+                setTimeout(function () {
+                    console.log("new Connect");
+                }, retryInMs);
+            }else if(retries >= maxRetries){
+                var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
+                console.log("Trying to reconnect...");
+                setTimeout(function () {
+                    console.log("new Connect");
+                }, retryInMs);
+            }
         });
         connection.on('message', function (message) {
             if (message.type === 'utf8') {

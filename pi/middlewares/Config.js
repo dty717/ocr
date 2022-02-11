@@ -8,6 +8,10 @@ const uploadURL = "http://server.delinapi.top:3000/ocr";
 // const uploadURL = "http://192.168.137.1:3000/ocr";
 const uploadTime = 10 * 60 * 1000;
 
+const camNormal = 0;
+const camBusy = 0;
+const camNotExist = 0;
+
 
 const stunUsername = "USER"
 const stunCredential = "PASSWORD"
@@ -20,5 +24,6 @@ const company = "delin";
 
 module.exports = {
     shiftTimeZone, PLC_Config, ffmpegCaptureConfig, uploadURL, uploadTime,
-    stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname,deviceID,company
+    stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname,deviceID,company,
+    camNormal,camBusy,camNotExist
 }
