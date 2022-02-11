@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname, deviceID, camNormal, camNotExist, camBusy } = require('./Config');
 
 const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } ,camState:{state : camNormal}};
+const { logger, _time_ } = require("./Logger")
 
 var client = new WebSocketClient();
 
@@ -188,8 +189,7 @@ function connect() {
                 // Unknown message; output to console for debugging.
 
                 default:
-                    console.err("Unknown message received:");
-                    console.err(message);
+                    logger.log(_time_(new Date()), "Unknown message received:", message);
             }
 
             // If there's text to insert into the chat buffer, do so now, then
