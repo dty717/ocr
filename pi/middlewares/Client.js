@@ -107,35 +107,37 @@ function inspect() {
 function connect() {
 
     wsClient.on('connectFailed', function (error) {
-        console.log('Connect Error: ' + error.toString());
+        logger.log(_time_(new Date()), 'Connect Error: ' + error.toString());
     });
 
     wsClient.on('connect', function (connection) {
-        console.log('WebSocket Client Connected');
+        logger.log(_time_(new Date()), 'WebSocket Client Connected');
         wsConnection = connection;
         clientState.wsState.connect = true;
         retries = 0;
         connection.on('error', function (error) {
-            console.log("Connection Error: " + error.toString());
+            logger.log(_time_(new Date()), "Connection Error: " + error.toString());
         });
         connection.on('close', function () {
             clientState.wsState.connect = false;
-            console.log('echo-protocol Connection Closed');
+            logger.log(_time_(new Date()), 'echo-protocol Connection Closed');
             if (retries < maxRetries) {
                 // Exponentially increase timeout to reconnect.
                 // Respectfully copied from the package `got`.
                 // eslint-disable-next-line no-restricted-properties
                 var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
                 retries += 1;
-                console.log("Trying to reconnect...");
+                logger.log(_time_(new Date()), "Trying to reconnect...");
                 setTimeout(function () {
-                    console.log("new Connect");
+                    logger.log(_time_(new Date()), "new Connect");
+                    connect()
                 }, retryInMs);
             }else if(retries >= maxRetries){
                 var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
-                console.log("Trying to reconnect...");
+                logger.log(_time_(new Date()), "Trying to reconnect...");
                 setTimeout(function () {
-                    console.log("new Connect");
+                    logger.log(_time_(new Date()), "new Connect");
+                    connect()
                 }, retryInMs);
             }
         });
