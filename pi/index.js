@@ -8,7 +8,16 @@ require('./models/SmartDetectHistory');
 
 require('./middlewares/Capture');
 require('./middlewares/Client');
-
+const bodyParser = require('body-parser');
+// const authRoutes = require('./routes/authRoutes');
+// const trackRoutes = require('./routes/trackRoutes');
+// const historyRoutes = require('./routes/historyRoutes');
+// const deviceRoutes = require('./routes/deviceRoutes');
+const paramRoutes = require('./routes/paramRoutes');
+// const updateRoutes = require('./routes/updateRoutes');
+// const ocrRoutes = require('./routes/ocrRoutes');
+const cors = require('cors')
+const path = require('path')
 
 const mongoUri = 'mongodb://admin:SUPERSECRETPASSWORD@127.0.0.1:27017/ocrDB?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false'
 
@@ -28,6 +37,15 @@ mongoose.connection.on('error', err => {
 });
 
 const app = express()
+app.use(cors())
+app.use(bodyParser.json());
+// app.use(authRoutes);
+// app.use(historyRoutes);
+// app.use(deviceRoutes);
+app.use(paramRoutes);
+// app.use(updateRoutes);
+// app.use(ocrRoutes);
+// app.use(trackRoutes);
 
 app.use(express.static('webrtc-from-chat'));
 

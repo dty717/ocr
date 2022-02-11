@@ -32,7 +32,7 @@ function getData(data){
 function getDataType(dataType){
     if(dataType.includes("高锰酸盐")){
         return "MN"
-    }else if(dataType.includes("总磷")){
+    }else if(dataType.match(/总磷|总磅/)){
         return "P"
     }else if(dataType.includes("总氮")){
         return "N"

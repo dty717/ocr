@@ -320,7 +320,9 @@ async function createPeerConnection() {
     sendChannel.onopen = handleSendChannelStatusChange;
     sendChannel.onclose = handleSendChannelStatusChange;
     setTimeout(() => {
-        myPeerConnection.videoState = true;
+        if(myPeerConnection){
+            myPeerConnection.videoState = true;
+        }
     }, 3000);
 }
 
@@ -549,6 +551,7 @@ function handleHangUpMsg(msg) {
         target: targetUserID,
         type: "idle"
     });
+    clientState.isInspected = false
     closeVideoCall();
 }
 
