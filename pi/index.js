@@ -13,7 +13,7 @@ const bodyParser = require('body-parser');
 // const trackRoutes = require('./routes/trackRoutes');
 // const historyRoutes = require('./routes/historyRoutes');
 // const deviceRoutes = require('./routes/deviceRoutes');
-const paramRoutes = require('./routes/paramRoutes');
+const stateRoutes = require('./routes/stateRoutes');
 // const updateRoutes = require('./routes/updateRoutes');
 // const ocrRoutes = require('./routes/ocrRoutes');
 const cors = require('cors')
@@ -42,7 +42,7 @@ app.use(bodyParser.json());
 // app.use(authRoutes);
 // app.use(historyRoutes);
 // app.use(deviceRoutes);
-app.use(paramRoutes);
+app.use(stateRoutes);
 // app.use(updateRoutes);
 // app.use(ocrRoutes);
 // app.use(trackRoutes);

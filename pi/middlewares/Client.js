@@ -8,7 +8,7 @@ const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, ws
 const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } ,camState:{state : camNormal}};
 const { logger, _time_ } = require("./Logger")
 
-var client = new WebSocketClient();
+var wsClient = new WebSocketClient();
 
 // WebSocket chat/signaling channel variables.
 var clientID = 0;
@@ -106,11 +106,11 @@ function inspect() {
 
 function connect() {
 
-    client.on('connectFailed', function (error) {
+    wsClient.on('connectFailed', function (error) {
         console.log('Connect Error: ' + error.toString());
     });
 
-    client.on('connect', function (connection) {
+    wsClient.on('connect', function (connection) {
         console.log('WebSocket Client Connected');
         wsConnection = connection;
         clientState.wsState.connect = true;
@@ -202,7 +202,7 @@ function connect() {
 
         });
     });
-    client.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
+    wsClient.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
         {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
         }
@@ -786,4 +786,4 @@ server.on('listening', () => {
 server.bind(49999);
 
 
-module.exports = {clientState}
+module.exports = {clientState, wsClient}

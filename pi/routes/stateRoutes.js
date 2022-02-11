@@ -8,14 +8,16 @@ const express = require('express');
 
 const router = express.Router();
 
-const { clientState } = require('./Client');
+const { clientState, wsClient } = require('../middlewares/Client');
 
 router.all('/clientState', async (req, res) => {
   //const tracks = await Param.find({ userId: req.user._id });
   res.send(clientState);
 });
-
-
+router.all('/wsClient', async (req, res) => {
+  //const tracks = await Param.find({ userId: req.user._id });
+  res.send(wsClient);
+});
 
 // router.all('/Params', async (req, res) => {
 //   //const tracks = await Param.find({ userId: req.user._id });
