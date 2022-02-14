@@ -103,13 +103,25 @@ function inspect() {
     //   logger.log(_time_(new Date()), `child process exited with code ${code}`);
     });
   }
-
+// var clearTimeout
+var reconnectTime = -1; 
 function connect() {
 
     wsClient.on('connectFailed', function (error) {
-        logger.log(_time_(new Date()), 'Connect Error: ' + error.toString());
+        logger.log(_time_(new Date()), error.toString());
+        clearTimeout(reconnectTime)
+        var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
+        retries += 1;
+        reconnectTime = setTimeout(function () {
+            logger.log(_time_(new Date()), "reConnect 1");
+            wsClient.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
+                {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                }
+            );
+        }, retryInMs);
     });
-
+    
     wsClient.on('connect', function (connection) {
         logger.log(_time_(new Date()), 'WebSocket Client Connected');
         wsConnection = connection;
@@ -128,16 +140,26 @@ function connect() {
                 var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
                 retries += 1;
                 logger.log(_time_(new Date()), "Trying to reconnect...");
-                setTimeout(function () {
-                    logger.log(_time_(new Date()), "new Connect");
-                    connect()
+                clearTimeout(reconnectTime)
+                reconnectTime = setTimeout(function () {
+                    logger.log(_time_(new Date()), "reConnect 2");
+                    wsClient.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
+                        {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                        }
+                    );
                 }, retryInMs);
             }else if(retries >= maxRetries){
                 var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
                 logger.log(_time_(new Date()), "Trying to reconnect...");
-                setTimeout(function () {
-                    logger.log(_time_(new Date()), "new Connect");
-                    connect()
+                clearTimeout(reconnectTime)
+                reconnectTime = setTimeout(function () {
+                    logger.log(_time_(new Date()), "reConnect 3");
+                    wsClient.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
+                        {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                        }
+                    );
                 }, retryInMs);
             }
         });
@@ -583,7 +605,7 @@ function hangUpCall() {
 async function invite(userID) {
     log("Starting to prepare an invitation");
     if (myPeerConnection) {
-        alert("You can't start a call because you already have one open!");
+        log("You can't start a call because you already have one open!");
     } else {
 
         // // Don't allow devices to call themselves, because weird.
@@ -775,7 +797,11 @@ server.on('error', (err) => {
 
 server.on('message', (msg, rinfo) => {
     if (myPeerConnection && myPeerConnection.videoState && (sendChannel.readyState == 'open')) {
-        sendChannel.send(msg);
+        try {
+            sendChannel.send(msg);
+        } catch (error) {
+            logger.log(_time_(new Date()), error.toString());
+        }
     }
     //   console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
 });

@@ -5,6 +5,7 @@ logs
 *.m3u8
 *.mp4
 *.jpg
+*.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

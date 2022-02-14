@@ -1,4 +1,5 @@
 const fs = require('fs')
+const timeShift = 0;
 
 function dataTypeValid(dataType){
     if(dataType.match(/高锰酸盐|总磷|总氮/)){
@@ -16,15 +17,20 @@ function dataValid(dataType){
     }
     return false;
 }
-
-function getData(data){
+function getData(data) {
     var dataObj = {}
     dataObj.data = data.match(dataRegex)[0]
     var units = data.split(dataObj.data)
     if (units.length > 1) {
         dataObj.unit = units[1]
-    }else{
+    } else {
         dataObj.unit = units[0]
+    }
+    var unitErrorMath = dataObj.unit.match(/([Il]+)[mo]g\/[LŁ]/);
+    if(unitErrorMath){
+        dataObj.unit = 'mg/L'
+        dataObj.data = parseFloat(dataObj.data+""+unitErrorMath[1].replace(/./g,1))
+        console.log('change value')
     }
     return dataObj;
 }
@@ -60,23 +66,29 @@ function getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,timeRegex,timeV
         var blockTextLen = block.text.replace(/[` ]/g, "").length;
         return (width1 - width2) * (width1 - width2) * (height1 - height2) * (height1 - height2)/(blockTextLen*blockTextLen)
     },true)
-    if(timePossibleList.length>0){
-        var index = timePossibleList[0].index;
-        var timeBlock =blocks[index];
-        var timeBlockText = timeBlock.text.replace(/[` ]/g, "");
-        var time;
-        if(timeBlockText.match(timeValueRegex)){
-            time = parseInt(timeBlockText.match(timeValueRegex)[0].replace(timeRegex,""));
-        }else{
-            if(index>0){
-                timeBlock =blocks[--index];
-                timeBlockText = timeBlock.text.replace(/[` ]/g, "");
-                if(timeBlockText.match(/\d+/)){
-                    time = parseInt(timeBlockText.match(/\d+/)[0]);
+    const timePossibleListLength = timePossibleList.length
+    if(timePossibleListLength>0){
+        for (let i = 0; i < timePossibleListLength; i++) {
+            var index = timePossibleList[i].index;
+            var timeBlock =blocks[index];
+            var timeBlockText = timeBlock.text.replace(/[` ]/g, "");
+            var time;
+            if(timeBlockText.match(timeValueRegex)){
+                time = parseInt(timeBlockText.match(timeValueRegex)[0].replace(timeRegex,""));
+            }else{
+                if(index>0){
+                    timeBlock =blocks[--index];
+                    timeBlockText = timeBlock.text.replace(/[` ]/g, "");
+                    if(timeBlockText.match(/\d+/)){
+                        time = parseInt(timeBlockText.match(/\d+/)[0]);
+                    }
                 }
             }
+            console.log(time, index)
+            if (time != undefined || !isNaN(time)) {
+                return { time, index };
+            }
         }
-        return {time,index};
     }
 }
 function getTimeByNameWithRegex(blocks,notIncludeIndexList,timeRegex,timeValueRegex){
@@ -102,7 +114,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./json/IMG_3878.json', 'utf8', (err, data) => {
+fs.readFile('./json/0ed893feb0c631552ccee78d88a0878b.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
@@ -244,22 +256,47 @@ fs.readFile('./json/IMG_3878.json', 'utf8', (err, data) => {
                                 const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
                                 var second = getTimeByNameWithRegex(blocks, notIncludeIndexList, secondRegex, secondValueRegex);
                                 var time = new Date(0);
+                                console.log(blocks,{ year, month, date, hour, minute, second,value: dataObject.data });
                                 if (year != undefined) {
-                                    time.setFullYear(year);
-                                    if (month != undefined) {
-                                        time.setMonth(month - 1);
-                                        if (date != undefined) {
-                                            time.setDate(date);
-                                            if (hour != undefined) {
-                                                time.setHours(hour);
-                                                if (minute != undefined) {
-                                                    time.setMinutes(minute);
-                                                    if (second != undefined) {
-                                                        time.setSeconds(second);
+                                    if(year>2000 && year<2050){
+                                        time.setFullYear(year);
+                                        if (month != undefined) {
+                                            if(month>0 && month<13){
+                                                time.setMonth(month - 1);
+                                                if (date != undefined) {
+                                                    if (date > 0 && date < 32) {
+                                                        time.setDate(date);
+                                                        if (hour != undefined) {
+                                                            if (hour > 0 && hour < 25) {
+                                                                time.setHours(hour + timeShift);
+                                                                if (minute != undefined) {
+                                                                    if (minute > 0 && minute < 61) {
+                                                                        time.setMinutes(minute);
+                                                                        if (second != undefined) {
+                                                                            if (second > 0 && second < 61) {
+                                                                                time.setSeconds(second);
+                                                                            }else{
+                                                                                return
+                                                                            }
+                                                                        }
+                                                                    }else{
+                                                                        return
+                                                                    }
+                                                                }
+                                                            }else{
+                                                                return
+                                                            }
+                                                        }
+                                                    }else{
+                                                        return
                                                     }
                                                 }
+                                            }else{
+                                                return
                                             }
                                         }
+                                    }else{
+                                        return
                                     }
                                 }
                                 console.log({ year, month, date, hour, minute, second,value: dataObject.data });

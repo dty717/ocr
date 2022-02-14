@@ -18,7 +18,7 @@ const SmartDetectHistory = mongoose.model('SmartDetectHistory');
 
 var selectedValue;
 var ffmpeg;
-function capatureAndUpload() {
+function capatureAndUpload(twice,lastData) {
   ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
 
   ffmpeg.stdout.on('data', (data) => {
@@ -40,31 +40,41 @@ function capatureAndUpload() {
   });
 
   ffmpeg.on('exit', (code) => {
-    
+
     const form = new FormData();
     form.append('company', company);
     form.append('deviceID', deviceID);
     form.append('uploadImage', fs.createReadStream('uploadImage/current_frame.jpg'));
+    if (twice) {
+      form.append('twice', twice+"");
+      form.append('lastSampleType', lastData.sampleType);
+      form.append('lastValue', lastData.value+"");
+      form.append('lastTime', lastData.time);
+    }
     if (selectedValue != undefined) {
       form.append('selectedValue', selectedValue);
     }
     axios.post(uploadURL, form, { headers: form.getHeaders() }).then(async ({ data }) => {
       logger.log(_time_(new Date()), data);
       if (data && data.time) {
-        await new SmartDetectHistory(data).save()
-        setData(data);
+        if (twice) {
+          await new SmartDetectHistory(data).save()
+          setData(data);
+        } else {
+          capatureAndUpload(true,data)
+        }
       }
     }).catch(function (error) {
-      logger.log(_time_(new Date()), "server error",error.message);
+      logger.log(_time_(new Date()), "server error", error.message);
     })
-    .then(function () {
-    });
+      .then(function () {
+      });
     logger.log(_time_(new Date()), `child process exited with code ${code}`);
   });
 }
 
 setTimeout(() => {
-  if(!clientState.isInspected){
+  if (!clientState.isInspected) {
     getData("D", 2, "70");
     capatureAndUpload();
   }
@@ -134,22 +144,22 @@ function getData() {
     data.forEach(e => {
       str += String.fromCharCode(e);
     });
-    if(str.startsWith('%01$RD')){
+    if (str.startsWith('%01$RD')) {
       var strTem = str.substring('%01$RD'.length)
-      var a0 = parseInt("0x"+strTem.substring(0,2))
-      var a1 = parseInt("0x"+strTem.substring(2,4))
-      var a2 = parseInt("0x"+strTem.substring(4,6))
-      var a3 = parseInt("0x"+strTem.substring(6,8))
+      var a0 = parseInt("0x" + strTem.substring(0, 2))
+      var a1 = parseInt("0x" + strTem.substring(2, 4))
+      var a2 = parseInt("0x" + strTem.substring(4, 6))
+      var a3 = parseInt("0x" + strTem.substring(6, 8))
       try {
-        selectedValue = Buffer.from([a3,a2,a1,a0]).readFloatBE(0);
+        selectedValue = Buffer.from([a3, a2, a1, a0]).readFloatBE(0);
         logger.log(_time_(new Date()), { selectedValue });
       } catch (error) {
         logger.log(_time_(new Date()), error);
       }
-    }else{
+    } else {
       selectedValue = undefined;
     }
-    
+
     logger.log(_time_(new Date()), "server => device:", str);
     client.end();
     client.destroy();
