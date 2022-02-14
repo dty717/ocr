@@ -2,10 +2,9 @@ const fs = require('fs')
 const timeShift = 0;
 
 function dataTypeValid(dataType){
-    if(dataType.match(/高锰酸盐|总磷|总氮/)){
+    if(dataType.match(/高锰酸盐|总磷|总氮|NH3-N/)){
         return true
     }else{
-
     }
     return false;
 }
@@ -18,6 +17,22 @@ function dataValid(dataType){
     return false;
 }
 function getData(data) {
+    if(data.endsWith('``')){
+        data = data.substring(0,data.length-2);
+    }
+    var dataList = data.split("``");
+    var dataListLength = dataList.length
+    if(dataListLength>=2){
+        if(dataList[dataListLength-2].endsWith('.')){
+            data = dataList[dataListLength-2]+ dataList[dataListLength-1]
+        }else if(!dataList[dataListLength-1].match(dataRegex)){
+            data = dataList[dataListLength-2]+ dataList[dataListLength-1]
+        }else{
+            data = dataList[dataListLength-1]
+        }
+    }
+    data = data.replace(/`/g,'')
+
     var dataObj = {}
     dataObj.data = data.match(dataRegex)[0]
     var units = data.split(dataObj.data)
@@ -36,12 +51,14 @@ function getData(data) {
 }
 
 function getDataType(dataType){
-    if(dataType.includes("高锰酸盐")){
+    if(dataType.match(/高锰酸盐/)){
         return "MN"
     }else if(dataType.match(/总磷|总磅/)){
         return "P"
-    }else if(dataType.includes("总氮")){
+    }else if(dataType.match(/总氮/)){
         return "N"
+    }else if(dataType.match(/NH3-N/)){
+        return "NH3"
     }
 }
 
@@ -114,7 +131,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./json/0ed893feb0c631552ccee78d88a0878b.json', 'utf8', (err, data) => {
+fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
@@ -214,22 +231,25 @@ fs.readFile('./json/0ed893feb0c631552ccee78d88a0878b.json', 'utf8', (err, data) 
                         // (index) => {
                         //     return !notIncludeIndexList.includes(index)&&(blocks[index].text.replace(/[` ]/g, "").match(timeRegex))
                         // }
-
+                        console.log(blocks)
                         var dataPossibleList = getPossibleList(blocks, (index) => { return !notIncludeIndexList.includes(index)}, (blockVertices) => {
                             // var height1 = (blockVertices[1].y + blockVertices[0].y) / 2;
                             // var height2 = (blockVertices[2].y + blockVertices[3].y) / 2;
                             // var width1 = (blockVertices[1].x + blockVertices[0].x) / 2;
                             // var width2 = (blockVertices[2].x + blockVertices[3].x) / 2;
                             var { width1, width2, height1, height2 } = convertBlockVerticesToHeightAndWidth(blockVertices);
-                            
-                            return (width1 - textWidth1) * (width1 - textWidth1) + (width2 - textWidth2) * (width2 - textWidth2) +
-                                (height1 - textHeight1) * (height1 - textHeight1) + (height2 - textHeight2) * (height2 - textHeight2)
+                            var scale =1
+                            if (((height1 < textHeight1) && (height2 < textHeight2))||((width1 < textWidth1) && (width2 < textWidth2))) {
+                                scale = 10
+                            }
+                            return scale*((width1 - textWidth1) * (width1 - textWidth1) + (width2 - textWidth2) * (width2 - textWidth2) +
+                                (height1 - textHeight1) * (height1 - textHeight1) + (height2 - textHeight2) * (height2 - textHeight2))
                         })
 
                         for (let j = 0; j < 4; j++) {
                             const dataBlock = blocks[dataPossibleList[j].index];
-                            var dataBlockText = dataBlock.text.replace(/[` ]/g, "");
-                            if (dataValid(dataBlockText)) {
+                            if (dataValid(dataBlock.text.replace(/[`\s]/g, ""))) {
+                                var dataBlockText = dataBlock.text.replace(/\s/g, "");
                                 const dataObject = getData(dataBlockText)
                                 notIncludeIndexList.push(dataPossibleList[j].index);
                                 const yearRegex = /年|year|Year|YEAR/;
