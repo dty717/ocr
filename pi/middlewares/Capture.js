@@ -18,6 +18,8 @@ const SmartDetectHistory = mongoose.model('SmartDetectHistory');
 
 var selectedValue;
 var ffmpeg;
+var lastInfo = ''
+
 function capatureAndUpload(twice,lastData) {
   ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
 
@@ -32,6 +34,7 @@ function capatureAndUpload(twice,lastData) {
     setTimeout(() => {
       ffmpeg.kill('SIGHUP');
     }, 6000)
+    lastInfo = new String(data);
     // logger.log(_time_(new Date()), `stderr: ${data}`);
   });
 
@@ -40,7 +43,15 @@ function capatureAndUpload(twice,lastData) {
   });
 
   ffmpeg.on('exit', (code) => {
-
+    if (lastInfo.indexOf('No such file or directory') != -1) {
+      logger.log(_time_(new Date()), lastInfo.toString());
+      logger.log(_time_(new Date()), `no such camera`);
+      return
+    } else if (lastInfo.indexOf('Device or resource busy') != -1) {
+      logger.log(_time_(new Date()), lastInfo.toString());
+      logger.log(_time_(new Date()), `camera busy`);
+      return
+    }
     const form = new FormData();
     form.append('company', company);
     form.append('deviceID', deviceID);
@@ -89,10 +100,11 @@ setInterval(() => {
 
 function setData(data) {
   var _date = new Date(data.time);
+  _date = new Date(_date.getTime() - shiftTimeZone * 1000 * 60 * 60)
   var year = _date.getFullYear();
   var month = _date.getMonth() + 1;
   var date = _date.getDate();
-  var hour = _date.getHours() - shiftTimeZone;
+  var hour = _date.getHours();
   var minute = _date.getMinutes();
   var second = _date.getSeconds();
   logger.log(_time_(new Date()), { year, month, date, hour, minute, value: data.value });
@@ -124,6 +136,9 @@ function setData(data) {
   });
   client.on('end', () => {
     logger.log(_time_(new Date()), 'disconnected from server');
+  });
+  client.on('error', () => {
+    logger.log(_time_(new Date()), 'error from PLC server');
   });
 }
 
@@ -166,5 +181,8 @@ function getData() {
   });
   client.on('end', () => {
     logger.log(_time_(new Date()), 'disconnected from server');
+  });
+  client.on('error', () => {
+    logger.log(_time_(new Date()), 'error from PLC server');
   });
 }

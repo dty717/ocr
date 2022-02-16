@@ -131,7 +131,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err, data) => {
+fs.readFile('./server/json/5e9be528f07a25fafa967f9b4224e61e.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
@@ -158,16 +158,16 @@ fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err,
         for (let i = 0; i < blockLen; i++) {
             const block = blocks[i];
             var words = block.paragraphs[0].words;
-            var blockText = "";
+            var wordText = "";
             for (let j = 0; j < words.length; j++) {
                 const symbols = words[j].symbols;
                 for (let k = 0; k < symbols.length; k++) {
                     const text = symbols[k].text;
-                    blockText += text + " "
+                    wordText += text + " "
                 }
-                blockText += "``"
+                wordText += "``"
             }
-            block.text = blockText;
+            block.text = wordText;
         }
         const text1Regex = /基[` ]*线|基[` ]*值/;
         const text2Regex = /滴[` ]*定[` ]*体[` ]*积|峰[` ]*值/;
@@ -220,23 +220,86 @@ fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err,
                     var dataTypeBlockText = dataTypeBlock.text.replace(/[` ]/g, "");
                     const dataType = getDataType(dataTypeBlockText);
                     if (dataTypeValid(dataTypeBlockText)) {
-                        notIncludeIndexList.push(heightPossibleList[i].index);
                         var selectDataLabeBlockVertices = dataTypeBlock.boundingBox.vertices;
-                        // var textWidth1 = (selectDataLabeBlockVertices[1].x + selectDataLabeBlockVertices[0].x) / 2;
-                        // var textWidth2 = (selectDataLabeBlockVertices[2].x + selectDataLabeBlockVertices[3].x) / 2;
-                        // var textHeight1 = (selectDataLabeBlockVertices[1].y + selectDataLabeBlockVertices[0].y) / 2;
-                        // var textHeight2 = (selectDataLabeBlockVertices[2].y + selectDataLabeBlockVertices[3].y) / 2;
+                        if(dataValid(dataTypeBlockText)){
+                            // console.log(dataTypeBlock)
+                            var words = dataTypeBlock.paragraphs[0].words;
+                            var wordsLength = words.length;
+                            for (let j = 0; j < words.length; j++) {
+                                var wordText = "";
+                                const symbols = words[j].symbols;
+                                for (let k = 0; k < symbols.length; k++) {
+                                    const text = symbols[k].text;
+                                    wordText += text
+                                }
+                                words[j].text = wordText
+                            }
+                            var minSuitDataTypeLen = wordsLength
+                            var dataTypeList;
+                            var _notIncludeIndexList = []
+                            checkSuitData:for (let m = 0; m < wordsLength; m++) {
+                                for (let n = 0; n < wordsLength-m; n++) {
+                                    var itemText = '';
+                                    for (let p = 0; p < m + 1; p++) {
+                                        itemText += words[n+p].text
+                                    }
+                                    if(dataTypeValid(itemText)){
+                                        // console.log(itemText)
+                                        dataTypeList= words.slice(n, m + n + 1)
+                                        minSuitDataTypeLen = m + 1
+                                        var positionValid = true
+                                        for (let f = 0; f < minSuitDataTypeLen - 1; f++) {
+                                            if ((dataTypeList[f].boundingBox.vertices[3].x > dataTypeList[f + 1].boundingBox.vertices[0].x) ||
+                                                (dataTypeList[f].boundingBox.vertices[2].x > dataTypeList[f + 1].boundingBox.vertices[1].x)) {
+                                                positionValid = false;
+                                                break
+                                            }
+                                        }
+                                        if(positionValid){
+                                            for (let k = n; k < m + n + 1; k++) {
+                                                _notIncludeIndexList.push(k);
+                                            }
+                                            break checkSuitData
+                                        }
+                                    }
+                                }
+                            }
+                            var { width1: textWidth1, width2: textWidth2, height1: textHeight1, height2: textHeight2 } =
+                                dataTypeList ? convertBlockVerticesToHeightAndWidth(
+                                    [
+                                        dataTypeList[0].boundingBox.vertices[0],
+                                        dataTypeList[0].boundingBox.vertices[1],
+                                        dataTypeList[dataTypeList.length-1].boundingBox.vertices[2],
+                                        dataTypeList[dataTypeList.length-1].boundingBox.vertices[3]
+                                    ]) : convertBlockVerticesToHeightAndWidth(selectDataLabeBlockVertices);
+                            var _dataPossibleList = getPossibleList(words, (index) => { return !_notIncludeIndexList.includes(index)}, (blockVertices) => {
+                                var { width1, width2, height1, height2 } = convertBlockVerticesToHeightAndWidth(blockVertices);
+                                var scale =1
+                                if (((height1 < textHeight1) && (height2 < textHeight2))||((width1 < textWidth1) && (width2 < textWidth2))) {
+                                    scale = 10
+                                }
+                                return scale*((width1 - textWidth1) * (width1 - textWidth1) + (width2 - textWidth2) * (width2 - textWidth2) +
+                                    (height1 - textHeight1) * (height1 - textHeight1) + (height2 - textHeight2) * (height2 - textHeight2))
+                            })
+                            console.log(_dataPossibleList)
+                            for (let j = 0; j < 4; j++) {
+                                const dataBlock = words[_dataPossibleList[j].index];
+                                if (dataValid(dataBlock.text.replace(/[`\s]/g, ""))) {
+                                    var dataBlockText = dataBlock.text.replace(/\s/g, "");
+                                    const dataObject = getData(dataBlockText)
+                                    notIncludeIndexList.push(_dataPossibleList[j].index);
+                                    var time = getFullTime(blocks,notIncludeIndexList)
+                                    if(time){
+                                        return { time, value: dataObject.data, unit: dataObject.unit, type: dataType }
+                                    }
+                                }
+                            }
+                        }
                         var {width1:textWidth1,width2:textWidth2,height1:textHeight1,height2:textHeight2} = convertBlockVerticesToHeightAndWidth(selectDataLabeBlockVertices);
 
-                        // (index) => {
-                        //     return !notIncludeIndexList.includes(index)&&(blocks[index].text.replace(/[` ]/g, "").match(timeRegex))
-                        // }
-                        console.log(blocks)
+                        notIncludeIndexList.push(heightPossibleList[i].index);
+
                         var dataPossibleList = getPossibleList(blocks, (index) => { return !notIncludeIndexList.includes(index)}, (blockVertices) => {
-                            // var height1 = (blockVertices[1].y + blockVertices[0].y) / 2;
-                            // var height2 = (blockVertices[2].y + blockVertices[3].y) / 2;
-                            // var width1 = (blockVertices[1].x + blockVertices[0].x) / 2;
-                            // var width2 = (blockVertices[2].x + blockVertices[3].x) / 2;
                             var { width1, width2, height1, height2 } = convertBlockVerticesToHeightAndWidth(blockVertices);
                             var scale =1
                             if (((height1 < textHeight1) && (height2 < textHeight2))||((width1 < textWidth1) && (width2 < textWidth2))) {
@@ -252,75 +315,10 @@ fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err,
                                 var dataBlockText = dataBlock.text.replace(/\s/g, "");
                                 const dataObject = getData(dataBlockText)
                                 notIncludeIndexList.push(dataPossibleList[j].index);
-                                const yearRegex = /年|year|Year|YEAR/;
-                                const yearValueRegex = /\d+\s*[年|year|Year|YEAR]/;
-                                var year = getTimeByNameWithRegex(blocks, notIncludeIndexList, yearRegex, yearValueRegex);
-
-                                const monthRegex = /月|month|Month|MONTH/;
-                                const monthValueRegex = /\d+\s*[月|month|Month|MONTH]/;
-                                var month = getTimeByNameWithRegex(blocks, notIncludeIndexList, monthRegex, monthValueRegex);
-
-                                const dateRegex = /日|date|Date|DATE/;
-                                const dateValueRegex = /\d+\s*[日|date|Date|DATE]/;
-                                var date = getTimeByNameWithRegex(blocks, notIncludeIndexList, dateRegex, dateValueRegex);
-
-                                const hourRegex = /时|吋|hour|Hour|HOUR/;
-                                const hourValueRegex = /\d+\s*[时|吋|hour|Hour|HOUR]/;
-                                var hour = getTimeByNameWithRegex(blocks, notIncludeIndexList, hourRegex, hourValueRegex);
-
-                                const minuteRegex = /分|min|Min|MIN/;
-                                const minuteValueRegex = /\d+\s*[分|min|Min|MIN]/;
-                                var minute = getTimeByNameWithRegex(blocks, notIncludeIndexList, minuteRegex, minuteValueRegex);
-
-                                const secondRegex = /秒|sec|Sec|SEC/;
-                                const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
-                                var second = getTimeByNameWithRegex(blocks, notIncludeIndexList, secondRegex, secondValueRegex);
-                                var time = new Date(0);
-                                console.log(blocks,{ year, month, date, hour, minute, second,value: dataObject.data });
-                                if (year != undefined) {
-                                    if(year>2000 && year<2050){
-                                        time.setFullYear(year);
-                                        if (month != undefined) {
-                                            if(month>0 && month<13){
-                                                time.setMonth(month - 1);
-                                                if (date != undefined) {
-                                                    if (date > 0 && date < 32) {
-                                                        time.setDate(date);
-                                                        if (hour != undefined) {
-                                                            if (hour > 0 && hour < 25) {
-                                                                time.setHours(hour + timeShift);
-                                                                if (minute != undefined) {
-                                                                    if (minute > 0 && minute < 61) {
-                                                                        time.setMinutes(minute);
-                                                                        if (second != undefined) {
-                                                                            if (second > 0 && second < 61) {
-                                                                                time.setSeconds(second);
-                                                                            }else{
-                                                                                return
-                                                                            }
-                                                                        }
-                                                                    }else{
-                                                                        return
-                                                                    }
-                                                                }
-                                                            }else{
-                                                                return
-                                                            }
-                                                        }
-                                                    }else{
-                                                        return
-                                                    }
-                                                }
-                                            }else{
-                                                return
-                                            }
-                                        }
-                                    }else{
-                                        return
-                                    }
+                                var time = getFullTime(blocks,notIncludeIndexList)
+                                if(time){
+                                    return { time, value: dataObject.data, unit: dataObject.unit, type: dataType }
                                 }
-                                console.log({ year, month, date, hour, minute, second,value: dataObject.data });
-                                return { time, value: dataObject.data, unit: dataObject.unit, type: dataType }
                             }
                         }
                         break;
@@ -332,3 +330,77 @@ fs.readFile('./server/json/f41905a6bae6f908ab8809b8c30d5bd1.json', 'utf8', (err,
     }
     // console.log(data)
 })
+
+
+function getFullTime(blocks,notIncludeIndexList){
+    const yearRegex = /年|year|Year|YEAR/;
+    const yearValueRegex = /\d+\s*[年|year|Year|YEAR]/;
+    var year = getTimeByNameWithRegex(blocks, notIncludeIndexList, yearRegex, yearValueRegex);
+
+    const monthRegex = /月|month|Month|MONTH/;
+    const monthValueRegex = /\d+\s*[月|month|Month|MONTH]/;
+    var month = getTimeByNameWithRegex(blocks, notIncludeIndexList, monthRegex, monthValueRegex);
+
+    const dateRegex = /日|date|Date|DATE/;
+    const dateValueRegex = /\d+\s*[日|date|Date|DATE]/;
+    var date = getTimeByNameWithRegex(blocks, notIncludeIndexList, dateRegex, dateValueRegex);
+
+    const hourRegex = /时|吋|hour|Hour|HOUR/;
+    const hourValueRegex = /\d+\s*[时|吋|hour|Hour|HOUR]/;
+    var hour = getTimeByNameWithRegex(blocks, notIncludeIndexList, hourRegex, hourValueRegex);
+
+    const minuteRegex = /分|min|Min|MIN/;
+    const minuteValueRegex = /\d+\s*[分|min|Min|MIN]/;
+    var minute = getTimeByNameWithRegex(blocks, notIncludeIndexList, minuteRegex, minuteValueRegex);
+
+    const secondRegex = /秒|sec|Sec|SEC/;
+    const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
+    var second = getTimeByNameWithRegex(blocks, notIncludeIndexList, secondRegex, secondValueRegex);
+    var time = new Date(0);
+    // console.log(blocks,{ year, month, date, hour, minute, second});
+    if (year != undefined) {
+        if(year>2000 && year<2050){
+            time.setFullYear(year);
+            if (month != undefined) {
+                if(month>0 && month<13){
+                    time.setMonth(month - 1);
+                    if (date != undefined) {
+                        if (date > 0 && date < 32) {
+                            time.setDate(date);
+                            if (hour != undefined) {
+                                if (hour > 0 && hour < 25) {
+                                    time.setHours(hour + timeShift);
+                                    if (minute != undefined) {
+                                        if (minute > 0 && minute < 61) {
+                                            time.setMinutes(minute);
+                                            if (second != undefined) {
+                                                if (second > 0 && second < 61) {
+                                                    time.setSeconds(second);
+                                                }else{
+                                                    return
+                                                }
+                                            }
+                                        }else{
+                                            return
+                                        }
+                                    }
+                                }else{
+                                    return
+                                }
+                            }
+                        }else{
+                            return
+                        }
+                    }
+                }else{
+                    return
+                }
+            }
+        }else{
+            return
+        }
+    }
+    if(time.getTime()!=0){
+        return time
+    }
+}
