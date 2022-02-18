@@ -5,7 +5,7 @@ const dgram = require('dgram')
 const { spawn } = require('child_process');
 const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, wsHostname, deviceID, camNormal, camNotExist, camBusy } = require('./Config');
 
-const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false } ,camState:{state : camNormal}};
+const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false }, camState: { state: camNormal } };
 const { logger, _time_ } = require("./Logger")
 
 var wsClient = new WebSocketClient();
@@ -34,7 +34,7 @@ var ffmpeg;
 var lastInfo = '';
 
 var retries = 0;
-var maxRetries = 10;
+const maxRetries = 10;
 
 function inspect() {
     ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
@@ -46,7 +46,7 @@ function inspect() {
         console.log('ffmpeg client data ok');
         // logger.log(_time_(new Date()), `stdout: ${data}`);
     });
-  
+
     ffmpeg.stderr.on('data', (data) => {
         //   setTimeout(() => {
         //     ffmpeg.kill('SIGHUP');
@@ -55,15 +55,15 @@ function inspect() {
         lastInfo = new String(data);
         // logger.log(_time_(new Date()), `stderr: ${data}`);
     });
-  
+
     ffmpeg.on('close', (code) => {
         console.log('ffmpeg client close');
         //   logger.log(_time_(new Date()), `child process close with code ${code}`);
     });
-  
+
     ffmpeg.on('exit', (code) => {
         console.log('ffmpeg client exit');
-        if(lastInfo.indexOf('No such file or directory')!=-1){
+        if (lastInfo.indexOf('No such file or directory') != -1) {
             clientState.camState.state = camNotExist;
             sendToServer({
                 type: "error",
@@ -82,36 +82,38 @@ function inspect() {
                 content: "摄像头连接错误"
             });
         }
-    //   const form = new FormData();
-    //   form.append('company', company);
-    //   form.append('deviceID', deviceID);
-    //   form.append('uploadImage', fs.createReadStream('uploadImage/current_frame.jpg'));
-    //   if (selectedValue != undefined) {
-    //     form.append('selectedValue', selectedValue);
-    //   }
-    //   axios.post(uploadURL, form, { headers: form.getHeaders() }).then(async ({ data }) => {
-    //     logger.log(_time_(new Date()), data);
-    //     if (data && data.time) {
-    //       await new SmartDetectHistory(data).save()
-    //       setData(data);
-    //     }
-    //   }).catch(function (error) {
-    //     logger.log(_time_(new Date()), "server error",error.message);
-    //   })
-    //   .then(function () {
-    //   });
-    //   logger.log(_time_(new Date()), `child process exited with code ${code}`);
+        //   const form = new FormData();
+        //   form.append('company', company);
+        //   form.append('deviceID', deviceID);
+        //   form.append('uploadImage', fs.createReadStream('uploadImage/current_frame.jpg'));
+        //   if (selectedValue != undefined) {
+        //     form.append('selectedValue', selectedValue);
+        //   }
+        //   axios.post(uploadURL, form, { headers: form.getHeaders() }).then(async ({ data }) => {
+        //     logger.log(_time_(new Date()), data);
+        //     if (data && data.time) {
+        //       await new SmartDetectHistory(data).save()
+        //       setData(data);
+        //     }
+        //   }).catch(function (error) {
+        //     logger.log(_time_(new Date()), "server error",error.message);
+        //   })
+        //   .then(function () {
+        //   });
+        //   logger.log(_time_(new Date()), `child process exited with code ${code}`);
     });
-  }
+}
 // var clearTimeout
-var reconnectTime = -1; 
+var reconnectTime = -1;
 function connect() {
 
     wsClient.on('connectFailed', function (error) {
+        clientState.wsState.connect = false;
         logger.log(_time_(new Date()), error.toString());
         clearTimeout(reconnectTime)
         var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
         retries += 1;
+        wsConnection = null;
         reconnectTime = setTimeout(function () {
             logger.log(_time_(new Date()), "reConnect 1");
             wsClient.connect('wss://' + wsHostname + ":6503", 'json', "https://" + wsHostname + ":3443",
@@ -121,7 +123,7 @@ function connect() {
             );
         }, retryInMs);
     });
-    
+
     wsClient.on('connect', function (connection) {
         logger.log(_time_(new Date()), 'WebSocket Client Connected');
         wsConnection = connection;
@@ -133,6 +135,7 @@ function connect() {
         connection.on('close', function () {
             clientState.wsState.connect = false;
             logger.log(_time_(new Date()), 'echo-protocol Connection Closed');
+            wsConnection = null;
             if (retries < maxRetries) {
                 // Exponentially increase timeout to reconnect.
                 // Respectfully copied from the package `got`.
@@ -149,7 +152,7 @@ function connect() {
                         }
                     );
                 }, retryInMs);
-            }else if(retries >= maxRetries){
+            } else if (retries >= maxRetries) {
                 var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
                 logger.log(_time_(new Date()), "Trying to reconnect...");
                 clearTimeout(reconnectTime)
@@ -233,6 +236,8 @@ function connect() {
     );
 }
 
+
+
 // Given a message containing a list of deviceIDs, this function
 // populates the device list box with those names, making each item
 // clickable to allow starting a video call.
@@ -260,9 +265,11 @@ function setDeviceID() {
 var log = () => { }
 
 function sendToServer(msg) {
-    console.log('send', msg)
+    // console.log('send', msg)
     var msgJSON = JSON.stringify(msg);
-    wsConnection.sendUTF(msgJSON);
+    if (wsConnection) {
+        wsConnection.sendUTF(msgJSON);
+    }
 }
 
 connect()
@@ -344,7 +351,7 @@ async function createPeerConnection() {
     sendChannel.onopen = handleSendChannelStatusChange;
     sendChannel.onclose = handleSendChannelStatusChange;
     setTimeout(() => {
-        if(myPeerConnection){
+        if (myPeerConnection) {
             myPeerConnection.videoState = true;
         }
     }, 3000);
@@ -353,7 +360,7 @@ async function createPeerConnection() {
 function handleSendChannelStatusChange(event) {
     if (sendChannel) {
         var state = sendChannel.readyState;
-        console.log({state});
+        console.log({ state });
         switch (state) {
             case 'open':
                 clientState.RTCState.connect = true;
@@ -553,7 +560,7 @@ function closeVideoCall() {
         myPeerConnection.close();
         myPeerConnection = null;
         webcamStream = null;
-        if(ffmpeg){
+        if (ffmpeg) {
             ffmpeg.kill('SIGHUP');
         }
     }
@@ -569,7 +576,7 @@ function closeVideoCall() {
 
 function handleHangUpMsg(msg) {
     log("*** Received hang up notification from other peer");
-    
+
     sendToServer({
         id: clientID,
         target: targetUserID,
@@ -814,4 +821,4 @@ server.on('listening', () => {
 server.bind(49999);
 
 
-module.exports = {clientState, wsClient}
+module.exports = { clientState, wsClient, reconnectTime, retries }

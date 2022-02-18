@@ -8,11 +8,11 @@ const express = require('express');
 
 const router = express.Router();
 
-const { clientState, wsClient } = require('../middlewares/Client');
+const { clientState, wsClient, reconnectTime, retries } = require('../middlewares/Client');
 
 router.all('/clientState', async (req, res) => {
   //const tracks = await Param.find({ userId: req.user._id });
-  res.send(clientState);
+  res.send({ ...clientState, reconnectTime, retries });
 });
 router.all('/wsClient', async (req, res) => {
   //const tracks = await Param.find({ userId: req.user._id });

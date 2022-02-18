@@ -2,7 +2,7 @@ const fs = require('fs')
 const timeShift = 0;
 
 function dataTypeValid(dataType){
-    if(dataType.match(/高锰酸盐|总磷|总氮|NH3-N/)){
+    if(dataType.match(/高锰酸盐|总[磷磅盛骑]|总氮|NH3-N/)){
         return true
     }else{
     }
@@ -53,7 +53,7 @@ function getData(data) {
 function getDataType(dataType){
     if(dataType.match(/高锰酸盐/)){
         return "MN"
-    }else if(dataType.match(/总磷|总磅/)){
+    }else if(dataType.match(/总[磷磅盛骑]/)){
         return "P"
     }else if(dataType.match(/总氮/)){
         return "N"
@@ -131,7 +131,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./server/json/5e9be528f07a25fafa967f9b4224e61e.json', 'utf8', (err, data) => {
+fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
