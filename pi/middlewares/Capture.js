@@ -7,7 +7,7 @@ const net = require('net');
 const { WriteData, ReadDataArea } = require('./Mewtocol');
 const mongoose = require('mongoose');
 const { clientState } = require('./Client');
-const { shiftTimeZone, PLC_Config, ffmpegCaptureConfig, uploadURL, uploadTime, deviceID, company } = require('./Config');
+const { shiftTimeZone, PLC_Config, ffmpegCaptureConfig, uploadURL, uploadTime, deviceID, company ,captureTime} = require('./Config');
 const buffer = new ArrayBuffer(4);
 const f32 = new Float32Array(buffer); // [0]
 const ui8 = new Uint8Array(buffer); // [0, 0, 0, 0]
@@ -26,14 +26,14 @@ function capatureAndUpload(twice,lastData) {
   ffmpeg.stdout.on('data', (data) => {
     setTimeout(() => {
       ffmpeg.kill('SIGHUP');
-    }, 3000)
+    }, captureTime)
     // logger.log(_time_(new Date()), `stdout: ${data}`);
   });
 
   ffmpeg.stderr.on('data', (data) => {
     setTimeout(() => {
       ffmpeg.kill('SIGHUP');
-    }, 6000)
+    }, captureTime)
     lastInfo = new String(data);
     // logger.log(_time_(new Date()), `stderr: ${data}`);
   });
