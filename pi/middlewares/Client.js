@@ -79,7 +79,7 @@ function inspect() {
                 target: targetUserID,
                 option: "clientID",
                 date: Date.now(),
-                content: "摄像头连接错误"
+                content: "摄像头正在使用中"
             });
         }
         //   const form = new FormData();
