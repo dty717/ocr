@@ -89,7 +89,7 @@ setTimeout(() => {
     getData("D", 2, "70");
     capatureAndUpload();
   }
-}, uploadTime);
+}, 3000);
 
 setInterval(() => {
   if (!clientState.isInspected) {
