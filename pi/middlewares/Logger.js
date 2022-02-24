@@ -28,5 +28,5 @@ process.on('uncaughtException',function(err) {
     subprocess.unref();
   }, 2000)
 });
-
+logger.log(_time_(new Date()),"init");
 module.exports = {logger,_time_}

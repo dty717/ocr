@@ -21,19 +21,24 @@ var ffmpeg;
 var lastInfo = ''
 
 function capatureAndUpload(twice,lastData) {
+  var initCaptureTime = false
   ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
 
   ffmpeg.stdout.on('data', (data) => {
-    setTimeout(() => {
-      ffmpeg.kill('SIGHUP');
-    }, captureTime)
+    // setTimeout(() => {
+    //   ffmpeg.kill('SIGHUP');
+    // }, captureTime)
     // logger.log(_time_(new Date()), `stdout: ${data}`);
   });
 
   ffmpeg.stderr.on('data', (data) => {
-    setTimeout(() => {
-      ffmpeg.kill('SIGHUP');
-    }, captureTime)
+    if(!initCaptureTime){
+      setTimeout(() => {
+        ffmpeg.kill('SIGHUP');
+      }, captureTime)
+      logger.log(_time_(new Date()), "initCaptureTime");
+      initCaptureTime = true;
+    }
     lastInfo = new String(data);
     // logger.log(_time_(new Date()), `stderr: ${data}`);
   });
