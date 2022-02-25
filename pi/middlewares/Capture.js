@@ -147,9 +147,9 @@ function setData(data) {
   });
 }
 
-function getData() {
+function getData(dataType, dataLen, dataPos) {
 
-  var setStr = ReadDataArea("D", 2, "230").map((e) => String.fromCharCode(e)).join("");
+  var setStr = ReadDataArea(dataType, dataLen, dataPos).map((e) => String.fromCharCode(e)).join("");
 
   const client = net.createConnection(PLC_Config, () => {
     logger.log(_time_(new Date()), 'connected to server!');
