@@ -187,7 +187,8 @@ function connect() {
                     text = "(" + timeStr + ") <b>" + message.name + "</b>: " + message.text + "<br>";
                     break;
                 case "rejectdeviceID":
-                    deviceID = message.name;
+                    logger.log(_time_(new Date()), "rejectdeviceID:" + message.name);
+                    // deviceID = message.name;
                     text = "<b>Your deviceID has been set to <em>" + deviceID +
                         "</em> because the name you chose is in use.</b><br>";
                     break;

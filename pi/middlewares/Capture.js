@@ -75,7 +75,7 @@ function capatureAndUpload(twice,lastData) {
       if (data && data.time) {
         if (twice) {
           await new SmartDetectHistory(data).save()
-          setData(data);
+          setData(data,"69");
         } else {
           capatureAndUpload(true,data)
         }
@@ -103,7 +103,7 @@ setInterval(() => {
   }
 }, uploadTime);
 
-function setData(data) {
+function setData(data,pos) {
   var _date = new Date(data.time);
   _date = new Date(_date.getTime() - shiftTimeZone * 1000 * 60 * 60)
   var year = _date.getFullYear();
@@ -116,12 +116,12 @@ function setData(data) {
 
   f32[0] = data.value;
 
-  var setStr = WriteData("D", [(parseInt("0x" + year) << 8) + parseInt("0x" + month),
+  var setStr = WriteData("D", [1,(parseInt("0x" + year) << 8) + parseInt("0x" + month),
   (parseInt("0x" + date) << 8) + parseInt("0x" + hour),
   (parseInt("0x" + minute) << 8) + parseInt("0x" + second),
   (ui8[1] << 8) + ui8[0],
   (ui8[3] << 8) + ui8[2],
-  ], "70").map((e) => String.fromCharCode(e)).join("");
+  ], pos).map((e) => String.fromCharCode(e)).join("");
 
   const client = net.createConnection(PLC_Config, () => {
     logger.log(_time_(new Date()), 'connected to server!');

@@ -2,7 +2,7 @@ const fs = require('fs')
 const timeShift = 0;
 
 function dataTypeValid(dataType){
-    if(dataType.match(/高锰酸盐|总[磷磅盛骑]|总氮|NH3-N/)){
+    if(dataType.match(/高锰酸盐|总[磷磅盛骑]|总氮|NH3-N|氨氮|COD/)){
         return true
     }else{
     }
@@ -52,12 +52,14 @@ function getData(data) {
 
 function getDataType(dataType){
     if(dataType.match(/高锰酸盐/)){
-        return "MN"
+        return "CODMN"
+    }else if(dataType.match(/COD/)){
+        return "CODCr"
     }else if(dataType.match(/总[磷磅盛骑]/)){
         return "P"
     }else if(dataType.match(/总氮/)){
         return "N"
-    }else if(dataType.match(/NH3-N/)){
+    }else if(dataType.match(/NH3-N|氨氮/)){
         return "NH3"
     }
 }
@@ -75,16 +77,24 @@ function getTimeObjectByNameWithRegex(blocks,notIncludeIndexList,timeRegex,timeV
     var timePossibleList = getPossibleList(blocks, (index) => {
         return !notIncludeIndexList.includes(index)&&(blocks[index].text.replace(/[` ]/g, "").match(timeRegex))
     }, (blockVertices,block) => {
-        // var height1 = (blockVertices[1].y + blockVertices[0].y) / 2;
-        // var height2 = (blockVertices[2].y + blockVertices[3].y) / 2;
-        // var width1 = (blockVertices[3].x + blockVertices[0].x) / 2;
-        // var width2 = (blockVertices[2].x + blockVertices[1].x) / 2;
         var {width1,width2,height1,height2} = convertBlockVerticesToHeightAndWidth(blockVertices);
         var blockTextLen = block.text.replace(/[` ]/g, "").length;
         return (width1 - width2) * (width1 - width2) * (height1 - height2) * (height1 - height2)/(blockTextLen*blockTextLen)
     },true)
     const timePossibleListLength = timePossibleList.length
     if(timePossibleListLength>0){
+        if (timePossibleListLength >= 2) {
+            for (let mIndex = 0; mIndex < timePossibleListLength - 1; mIndex++) {
+                const element = timePossibleList[mIndex];
+                if ((timePossibleList[mIndex].value < timePossibleList[mIndex + 1].value * 1.1) && (timePossibleList[mIndex].value > timePossibleList[mIndex + 1].value * 0.9)) {
+                    if (blocks[timePossibleList[mIndex].index].boundingBox.vertices[mIndex].x > blocks[timePossibleList[mIndex + 1].index].boundingBox.vertices[mIndex + 1].x) {
+                        var _obj = timePossibleList[mIndex];
+                        timePossibleList[mIndex] = timePossibleList[mIndex + 1];
+                        timePossibleList[mIndex + 1] = _obj;
+                    }
+                }
+            }
+        }
         for (let i = 0; i < timePossibleListLength; i++) {
             var index = timePossibleList[i].index;
             var timeBlock =blocks[index];
@@ -131,7 +141,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
+fs.readFile('./server/json/test/960353ddb149583f91525d16c6ad4b60.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
@@ -147,7 +157,18 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
         return;
     }
     var text = data.fullTextAnnotation.text;
-    if (text.match(/基线|基值/) && text.match(/滴定体积|峰值/)) {
+    // const textRegexs = [
+    //     { match: /工[` ]*作[` ]*状[` ]*态/, valid: /工作状态/, posValid: true },
+    //     { match: /当[` ]*前[` ]*步[` ]*骤/, valid: /当前步骤/, posValid: true },
+    //     { match: /在[` ]*线[` ]*分[` ]*析[` ]*仪/, valid: /在线分析仪/, dataValid: true, excluded: true }
+    // ];
+
+    const textRegexs = [
+        { match: /基[` ]*线|基[` ]*值/, valid: /基线|基值/, posValid: true, dataValid: true },
+        { match: /滴[` ]*定[` ]*体[` ]*积|峰[` ]*值/, valid: /滴定体积|峰值/, posValid: true, dataValid: true },
+    ];
+
+    if (textRegexs.every(textRegex=> text.match(textRegex.valid))) {
         /**
          * 
          * judge block position
@@ -169,37 +190,46 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
             }
             block.text = wordText;
         }
-        const text1Regex = /基[` ]*线|基[` ]*值/;
-        const text2Regex = /滴[` ]*定[` ]*体[` ]*积|峰[` ]*值/;
-        var text1IndexList = [];
-        var text2IndexList = [];
+        const textRegexsLen = textRegexs.length;
+        var textIndexsList = []
+        for (let textIndex = 0; textIndex < textRegexsLen; textIndex++) {
+            textIndexsList.push([]);
+        }
         var notIncludeIndexList = []
         for (let i = 0; i < blockLen; i++) {
             const block = blocks[i];
-            if (block.text.match(text1Regex)) {
-                text1IndexList.push(i);
-            }
-            if (block.text.match(text2Regex)) {
-                text2IndexList.push(i);
+            for (let j = 0; j < textRegexsLen; j++) {
+                const textRegex = textRegexs[j];
+                if (block.text.match(textRegex.match)) {
+                    textIndexsList[j].push(i);
+                }
             }
         }
-        if (text1IndexList.length == 1 && (text2IndexList.length == 1)) {
-            var text1Vertices = blocks[text1IndexList[0]].boundingBox.vertices;
-            var text2Vertices = blocks[text2IndexList[0]].boundingBox.vertices;
-            notIncludeIndexList.push(text1IndexList[0]);
-            notIncludeIndexList.push(text2IndexList[0]);
+        if (textIndexsList.every(textIndexList => textIndexList.length == 1)) {
+            notIncludeIndexList.push(...textIndexsList.filter((textIndexList, textIndex) => !textRegexs[textIndex].excluded).map(textIndexList => textIndexList[0]));
+            // notIncludeIndexList.push(text2IndexList[0]);
             /**
              * 
              * check block position
              * 
              */
             var blockValid = true;
-            for (let i = 0; i < text1Vertices.length; i++) {
-                const text1Vertice = text1Vertices[i];
-                const text2Vertice = text2Vertices[i];
-                if (text1Vertice.x > text2Vertice.x) {
-                    blockValid = false;
-                    break;
+
+            var textVertices = textRegexs.map((textRegex, textRegexIndex) => {
+                return {
+                    vertices: blocks[textIndexsList[textRegexIndex][0]].boundingBox.vertices,
+                    posValid: textRegex.posValid
+                }
+            }).filter(textRegex => textRegex.posValid)
+            // console.log(textVertices)
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < textVertices.length - 1; j++) {
+                    const text1Vertice = textVertices[j].vertices;
+                    const text2Vertice = textVertices[j + 1].vertices;
+                    if (text1Vertice[i].x > text2Vertice[i].x) {
+                        blockValid = false;
+                        break;
+                    }
                 }
             }
             if (blockValid) {
@@ -208,8 +238,16 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
                  * predict the possible block
                  * 
                  */
-                var textHeight1 = (text1Vertices[1].y + text1Vertices[0].y + text2Vertices[1].y + text2Vertices[0].y) / 4;
-                var textHeight2 = (text1Vertices[2].y + text1Vertices[3].y + text2Vertices[2].y + text2Vertices[3].y) / 4;
+                 var textDataVertices = textRegexs.map((textRegex, textRegexIndex) => {
+                    return {
+                        vertices: blocks[textIndexsList[textRegexIndex][0]].boundingBox.vertices,
+                        dataValid: textRegex.dataValid
+                    }
+                }).filter(textRegex => textRegex.dataValid)
+                var textHeight1 = textDataVertices.reduce((partialSum, textDataVertice) => textDataVertice.vertices[0].y + textDataVertice.vertices[1].y + partialSum, 0) / (2 * textDataVertices.length);
+                var textHeight2 = textDataVertices.reduce((partialSum, textDataVertice) => textDataVertice.vertices[2].y + textDataVertice.vertices[3].y + partialSum, 0) / (2 * textDataVertices.length);
+                // var textHeight1 = (text1Vertices[1].y + text1Vertices[0].y + text2Vertices[1].y + text2Vertices[0].y) / 4;
+                // var textHeight2 = (text1Vertices[2].y + text1Vertices[3].y + text2Vertices[2].y + text2Vertices[3].y) / 4;
                 var heightPossibleList = getPossibleList(blocks, (index) => { return !notIncludeIndexList.includes(index) }, (blockVertices) => {
                     var height1 = (blockVertices[1].y + blockVertices[0].y) / 2;
                     var height2 = (blockVertices[2].y + blockVertices[3].y) / 2;
@@ -275,9 +313,13 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
                             var _dataPossibleList = getPossibleList(words, (index) => { return !_notIncludeIndexList.includes(index)}, (blockVertices) => {
                                 var { width1, width2, height1, height2 } = convertBlockVerticesToHeightAndWidth(blockVertices);
                                 var scale =1
-                                if (((height1 < textHeight1) && (height2 < textHeight2))||((width1 < textWidth1) && (width2 < textWidth2))) {
-                                    scale = 10
+                                if ((height1 < textHeight1) && (height2 < textHeight2)) {
+                                    scale += 5
                                 }
+                                if((width1 < textWidth1) && (width2 < textWidth2)){
+                                    scale += 2
+                                }
+    
                                 return scale*((width1 - textWidth1) * (width1 - textWidth1) + (width2 - textWidth2) * (width2 - textWidth2) +
                                     (height1 - textHeight1) * (height1 - textHeight1) + (height2 - textHeight2) * (height2 - textHeight2))
                             })
@@ -302,8 +344,11 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
                         var dataPossibleList = getPossibleList(blocks, (index) => { return !notIncludeIndexList.includes(index)}, (blockVertices) => {
                             var { width1, width2, height1, height2 } = convertBlockVerticesToHeightAndWidth(blockVertices);
                             var scale =1
-                            if (((height1 < textHeight1) && (height2 < textHeight2))||((width1 < textWidth1) && (width2 < textWidth2))) {
-                                scale = 10
+                            if ((height1 < textHeight1) && (height2 < textHeight2)) {
+                                scale += 5
+                            }
+                            if((width1 < textWidth1) && (width2 < textWidth2)){
+                                scale += 2
                             }
                             return scale*((width1 - textWidth1) * (width1 - textWidth1) + (width2 - textWidth2) * (width2 - textWidth2) +
                                 (height1 - textHeight1) * (height1 - textHeight1) + (height2 - textHeight2) * (height2 - textHeight2))
@@ -331,31 +376,28 @@ fs.readFile('./server/json/current_frame.json', 'utf8', (err, data) => {
     // console.log(data)
 })
 
+const yearRegex = /年|year|Year|YEAR/;
+const yearValueRegex = /\d+\s*[年|year|Year|YEAR]/;
+const monthRegex = /月|month|Month|MONTH/;
+const monthValueRegex = /\d+\s*[月|month|Month|MONTH]/;
+const dateRegex = /日|date|Date|DATE/;
+const dateValueRegex = /\d+\s*[日|date|Date|DATE]/;
+const hourRegex = /时|吋|hour|Hour|HOUR/;
+const hourValueRegex = /\d+\s*[时|吋|hour|Hour|HOUR]/;
+const minuteRegex = /分|min|Min|MIN/;
+const minuteValueRegex = /\d+\s*[分|min|Min|MIN]/;
+const secondRegex = /秒|sec|Sec|SEC/;
+const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
 
 function getFullTime(blocks,notIncludeIndexList){
-    const yearRegex = /年|year|Year|YEAR/;
-    const yearValueRegex = /\d+\s*[年|year|Year|YEAR]/;
+    
     var year = getTimeByNameWithRegex(blocks, notIncludeIndexList, yearRegex, yearValueRegex);
-
-    const monthRegex = /月|month|Month|MONTH/;
-    const monthValueRegex = /\d+\s*[月|month|Month|MONTH]/;
     var month = getTimeByNameWithRegex(blocks, notIncludeIndexList, monthRegex, monthValueRegex);
-
-    const dateRegex = /日|date|Date|DATE/;
-    const dateValueRegex = /\d+\s*[日|date|Date|DATE]/;
     var date = getTimeByNameWithRegex(blocks, notIncludeIndexList, dateRegex, dateValueRegex);
-
-    const hourRegex = /时|吋|hour|Hour|HOUR/;
-    const hourValueRegex = /\d+\s*[时|吋|hour|Hour|HOUR]/;
     var hour = getTimeByNameWithRegex(blocks, notIncludeIndexList, hourRegex, hourValueRegex);
-
-    const minuteRegex = /分|min|Min|MIN/;
-    const minuteValueRegex = /\d+\s*[分|min|Min|MIN]/;
     var minute = getTimeByNameWithRegex(blocks, notIncludeIndexList, minuteRegex, minuteValueRegex);
-
-    const secondRegex = /秒|sec|Sec|SEC/;
-    const secondValueRegex = /\d+\s*[秒|sec|Sec|SEC]/;
     var second = getTimeByNameWithRegex(blocks, notIncludeIndexList, secondRegex, secondValueRegex);
+
     var time = new Date(0);
     // console.log(blocks,{ year, month, date, hour, minute, second});
     if (year != undefined) {
