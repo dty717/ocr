@@ -141,7 +141,7 @@ function getPossibleList(blocks,validFun,valFun,desc){
     return possibleList;
 }
 
-fs.readFile('./server/json/test/960353ddb149583f91525d16c6ad4b60.json', 'utf8', (err, data) => {
+fs.readFile('./server/json/ffeb7b43a629797ffaefe7cef882bc35.json', 'utf8', (err, data) => {
     if (err) {
         console.error(err)
         return
@@ -410,13 +410,13 @@ function getFullTime(blocks,notIncludeIndexList){
                         if (date > 0 && date < 32) {
                             time.setDate(date);
                             if (hour != undefined) {
-                                if (hour > 0 && hour < 25) {
+                                if (hour >= 0 && hour < 25) {
                                     time.setHours(hour + timeShift);
                                     if (minute != undefined) {
-                                        if (minute > 0 && minute < 61) {
+                                        if (minute >= 0 && minute < 61) {
                                             time.setMinutes(minute);
                                             if (second != undefined) {
-                                                if (second > 0 && second < 61) {
+                                                if (second >= 0 && second < 61) {
                                                     time.setSeconds(second);
                                                 }else{
                                                     return

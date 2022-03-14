@@ -7,7 +7,7 @@ const net = require('net');
 const { WriteData, ReadDataArea } = require('./Mewtocol');
 const mongoose = require('mongoose');
 const { clientState } = require('./Client');
-const { shiftTimeZone, PLC_Config, ffmpegCaptureConfig, uploadURL, uploadTime, deviceID, company ,captureTime} = require('./Config');
+const { shiftTimeZone, PLC_Config, ffmpegCaptureConfig, uploadURL, uploadTime, deviceID, company ,captureTime, getSampleTimeTime, firstUploadTime, firstGetSampleTimeTime} = require('./Config');
 const buffer = new ArrayBuffer(4);
 const f32 = new Float32Array(buffer); // [0]
 const ui8 = new Uint8Array(buffer); // [0, 0, 0, 0]
@@ -17,11 +17,18 @@ const { logger, _time_ } = require("./Logger")
 const SmartDetectHistory = mongoose.model('SmartDetectHistory');
 
 var selectedValue;
+var sampleTime = new Date(0);
 var ffmpeg;
 var lastInfo = ''
+var dataValid = new Date() - sampleTime < 60 * 60 * 1000;
 
 function capatureAndUpload(twice,lastData) {
   var initCaptureTime = false
+  if(!twice){
+    dataValid = new Date() - sampleTime < 60 * 60 * 1000;
+  }
+  logger.log(_time_(new Date()), _time_(new Date()), _time_(sampleTime), new Date() - sampleTime < 60 * 60 * 1000,{twice});
+
   ffmpeg = spawn("ffmpeg", ffmpegCaptureConfig);
 
   ffmpeg.stdout.on('data', (data) => {
@@ -66,6 +73,7 @@ function capatureAndUpload(twice,lastData) {
       form.append('lastSampleType', lastData.sampleType);
       form.append('lastValue', lastData.value+"");
       form.append('lastTime', lastData.time);
+      form.append('dataValid',dataValid+"");
     }
     if (selectedValue != undefined) {
       form.append('selectedValue', selectedValue);
@@ -74,10 +82,27 @@ function capatureAndUpload(twice,lastData) {
       logger.log(_time_(new Date()), data);
       if (data && data.time) {
         if (twice) {
-          await new SmartDetectHistory(data).save()
-          setData(data,"69");
+          if(dataValid){
+            await new SmartDetectHistory(data).save()
+            setData(data,"69");
+          }else{
+            await new SmartDetectHistory(data).save()
+          }
         } else {
-          capatureAndUpload(true,data)
+          var [lastLocalDate] = await SmartDetectHistory.find().sort({ "_id": -1 }).limit(1)
+          logger.log(_time_(new Date()), lastLocalDate, data);
+          if ((lastLocalDate.deviceID == data.deviceID) &&
+            (lastLocalDate.time.toJSON(), data.time) &&
+            (lastLocalDate.sampleType == data.sampleType) &&
+            (lastLocalDate.value == data.value)) {
+            logger.log(_time_(new Date()), 'existing local results');
+          } else {
+            capatureAndUpload(true, data);
+          }
+          // logger.log(_time_(new Date()),lastLocalDate.deviceID==data.deviceID)
+          // logger.log(_time_(new Date()),lastLocalDate.time.toJSON(),data.time,lastLocalDate.time.toJSON()==data.time)
+          // logger.log(_time_(new Date()),lastLocalDate.sampleType==data.sampleType)
+          // logger.log(_time_(new Date()),lastLocalDate.value==data.value)
         }
       }
     }).catch(function (error) {
@@ -89,16 +114,27 @@ function capatureAndUpload(twice,lastData) {
   });
 }
 
+
 setTimeout(() => {
   if (!clientState.isInspected) {
-    getData("D", 2, "246");
+    getSampleTime("D", 5, "120");
+  }
+}, firstGetSampleTimeTime);
+
+setInterval(() => {
+  getSampleTime("D", 5, "120");
+}, getSampleTimeTime);
+
+setTimeout(() => {
+  if (!clientState.isInspected) {
+    getSelectedValue("D", 2, "246");
     capatureAndUpload();
   }
-}, 3000);
+}, firstUploadTime);
 
 setInterval(() => {
   if (!clientState.isInspected) {
-    getData("D", 2, "246");
+    getSelectedValue("D", 2, "246");
     capatureAndUpload();
   }
 }, uploadTime);
@@ -147,7 +183,7 @@ function setData(data,pos) {
   });
 }
 
-function getData(dataType, dataLen, dataPos) {
+function getSelectedValue(dataType, dataLen, dataPos) {
 
   var setStr = ReadDataArea(dataType, dataLen, dataPos).map((e) => String.fromCharCode(e)).join("");
 
@@ -178,6 +214,52 @@ function getData(dataType, dataLen, dataPos) {
       }
     } else {
       selectedValue = undefined;
+    }
+
+    logger.log(_time_(new Date()), "server => device:", str);
+    client.end();
+    client.destroy();
+  });
+  client.on('end', () => {
+    logger.log(_time_(new Date()), 'disconnected from server');
+  });
+  client.on('error', () => {
+    logger.log(_time_(new Date()), 'error from PLC server');
+  });
+}
+
+function getSampleTime(dataType, dataLen, dataPos) {
+
+  var setStr = ReadDataArea(dataType, dataLen, dataPos).map((e) => String.fromCharCode(e)).join("");
+
+  const client = net.createConnection(PLC_Config, () => {
+    logger.log(_time_(new Date()), 'connected to server!');
+    logger.log(_time_(new Date()), 'client:', setStr);
+    setStr = Buffer.from(setStr);
+    client.write(setStr);
+    logger.log(_time_(new Date()), 'client:', setStr);
+  });
+
+  client.on('data', (data) => {
+    var str = '';
+    data.forEach(e => {
+      str += String.fromCharCode(e);
+    });
+    if (str.startsWith('%01$RD')) {
+      var strTem = str.substring('%01$RD'.length)
+      var min = parseInt(strTem.substring(2, 4) + strTem.substring(0, 2));
+      var date = parseInt(strTem.substring(6, 8) + strTem.substring(4, 6));
+      var hour = parseInt(strTem.substring(10, 12) + strTem.substring(8, 10));
+      var year = parseInt(strTem.substring(14, 16) + strTem.substring(12, 14));
+      var month = parseInt(strTem.substring(18, 20) + strTem.substring(16, 18));
+      try {
+        sampleTime = new Date(year, month - 1, date, hour, min)
+        logger.log(_time_(new Date()), { year, month, date, hour, min });
+      } catch (error) {
+        logger.log(_time_(new Date()), error);
+      }
+    } else {
+      // selectedValue = undefined;
     }
 
     logger.log(_time_(new Date()), "server => device:", str);

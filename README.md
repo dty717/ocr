@@ -178,6 +178,15 @@ sudo netplan try
 sudo netplan apply #be careful with the above commond no error and can be runned!!!
 ```
 
+## change network
+list network
+```sh
+sudo wpa_cli -i wlan0 list_networks
+```
+select network
+```sh
+sudo wpa_cli -i wlan0 select_network network_id
+```
 
 ## install tesseract
 

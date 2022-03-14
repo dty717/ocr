@@ -418,13 +418,13 @@ function getFullTime(blocks, notIncludeIndexList) {
                         if (date > 0 && date < 32) {
                             time.setDate(date);
                             if (hour != undefined) {
-                                if (hour > 0 && hour < 25) {
+                                if (hour >= 0 && hour < 25) {
                                     time.setHours(hour + timeShift);
                                     if (minute != undefined) {
-                                        if (minute > 0 && minute < 61) {
+                                        if (minute >= 0 && minute < 61) {
                                             time.setMinutes(minute);
                                             if (second != undefined) {
-                                                if (second > 0 && second < 61) {
+                                                if (second >= 0 && second < 61) {
                                                     time.setSeconds(second);
                                                 }else{
                                                     return

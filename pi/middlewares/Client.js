@@ -8,7 +8,10 @@ const { stunUsername, stunCredential, stunPort, ffmpegInspectConfig, stunURL, ws
 const clientState = { RTCState: { connect: false }, isInspected: false, wsState: { connect: false }, camState: { state: camNormal } };
 const { logger, _time_ } = require("./Logger")
 
-var wsClient = new WebSocketClient();
+var wsClient = new WebSocketClient({
+    keepalive: true,
+    keepaliveInterval: 1000
+});
 
 // WebSocket chat/signaling channel variables.
 var clientID = 0;
@@ -35,6 +38,8 @@ var lastInfo = '';
 
 var retries = 0;
 const maxRetries = 10;
+
+
 
 function inspect() {
     ffmpeg = spawn("ffmpeg", ffmpegInspectConfig);
